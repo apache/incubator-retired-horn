@@ -31,7 +31,7 @@ import org.apache.hama.HamaConfiguration;
 import org.apache.hama.commons.math.DenseDoubleVector;
 import org.apache.hama.commons.math.DoubleVector;
 import org.apache.hama.commons.math.FunctionFactory;
-import org.apache.hama.ml.ann.SmallLayeredNeuralNetwork;
+import org.apache.horn.bsp.SmallLayeredNeuralNetwork;
 
 /**
  * The example of using {@link SmallLayeredNeuralNetwork}, including the

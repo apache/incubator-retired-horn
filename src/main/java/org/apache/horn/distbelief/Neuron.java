@@ -23,6 +23,10 @@ public abstract class Neuron<M extends Writable> implements NeuronInterface<M> {
   double output;
   double weight;
 
+  public void propagate(double gradient) {
+    // TODO Auto-generated method stub
+  }
+
   public void setOutput(double output) {
     this.output = output;
   }
@@ -32,6 +36,7 @@ public abstract class Neuron<M extends Writable> implements NeuronInterface<M> {
   }
 
   public void push(double weight) {
+    // TODO Auto-generated method stub
     this.weight = weight;
   }
 

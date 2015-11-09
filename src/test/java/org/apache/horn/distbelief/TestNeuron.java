@@ -28,6 +28,8 @@ import org.apache.hama.commons.math.Sigmoid;
 
 public class TestNeuron extends TestCase {
   private static double learningRate = 0.1;
+  private static double bias = -1;
+  private static double theta = 0.8;
 
   public static class MyNeuron extends
       Neuron<PropMessage<DoubleWritable, DoubleWritable>> {
@@ -40,24 +42,24 @@ public class TestNeuron extends TestCase {
       for (PropMessage<DoubleWritable, DoubleWritable> m : messages) {
         sum += m.getMessage().get() * m.getWeight().get();
       }
-      sum += (-1 * 0.8);
+      sum += (bias * theta);
 
       double output = new Sigmoid().apply(sum);
       this.setOutput(output);
+      this.propagate(output);
     }
 
     @Override
     public void downward(
         Iterable<PropMessage<DoubleWritable, DoubleWritable>> messages)
         throws IOException {
-
       for (PropMessage<DoubleWritable, DoubleWritable> m : messages) {
         // Calculates error gradient for each neuron
         double gradient = this.getOutput() * (1 - this.getOutput())
             * m.getMessage().get() * m.getWeight().get();
 
         // Propagates to lower layer
-        System.out.println(gradient);
+        this.propagate(gradient);
 
         // Weight corrections
         double weight = learningRate * this.getOutput() * m.getMessage().get();
@@ -84,4 +86,5 @@ public class TestNeuron extends TestCase {
     n.downward(x);
     assertEquals(-0.006688234848481696, n.getUpdate());
   }
+  
 }

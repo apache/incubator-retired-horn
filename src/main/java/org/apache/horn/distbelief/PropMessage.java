@@ -37,6 +37,9 @@ public class PropMessage<M extends Writable, W extends Writable> implements
     this.weight = weight;
   }
 
+  /**
+   * @return the activation or error message
+   */
   public M getMessage() {
     return message;
   }

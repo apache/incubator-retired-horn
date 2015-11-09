@@ -61,7 +61,7 @@ public class DistBeliefModelTrainer extends BSP {
         sync();
       }
         
-      // calculate total error
+      // 2.2 calculate total error
       sync();
       
       // 2.3 downward propagation (start from the total error)
@@ -70,8 +70,8 @@ public class DistBeliefModelTrainer extends BSP {
         sync();
       }
     
-      // calculate the the average training error
     }
+    // calculate the the average training error
     */
     
   }
@@ -81,7 +81,7 @@ public class DistBeliefModelTrainer extends BSP {
   }
 
   private void pushParameters(BSPPeer peer) {
-    // TODO push updated weights     
+    // TODO push updated weights
   }
 
 }

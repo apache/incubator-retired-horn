@@ -49,7 +49,7 @@ public class DistBeliefModelTrainer extends BSP {
    */
   private void doMinibatch(BSPPeer peer) {
     double avgTrainingError = 0.0;
-    // 1. loads a set of mini-batch instances from assigned splits into memory
+    // 1. loads a next set of mini-batch instances from assigned splits into memory
     
     // 2. train incrementally from a mini-batch of instances
     /*

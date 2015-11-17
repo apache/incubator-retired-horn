@@ -32,7 +32,7 @@ public class Tanh extends DoubleFunction {
 
   @Override
   public double applyDerivative(double value) {
-    return 1 - value * value;
+    return 1 - Math.pow((Math.exp(2 * value) - 1) / (Math.exp(2 * value) + 1), 2);
   }
   
 }

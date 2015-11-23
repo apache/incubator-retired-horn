@@ -35,7 +35,7 @@ public class Sigmoid extends DoubleFunction {
 
   @Override
   public double applyDerivative(double value) {
-    return value * (1 - value);
+    return apply(value) * (1 - apply(value));
   }
 
 }

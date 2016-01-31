@@ -32,6 +32,7 @@ import org.apache.hama.commons.math.DoubleVector;
 import org.mortbay.log.Log;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * The trainer that train the {@link SmallLayeredNeuralNetwork} based on BSP
@@ -53,7 +54,7 @@ public final class SmallLayeredNeuralNetworkTrainer
   private long convergenceCheckInterval;
   private long iterations;
   private long maxIterations;
-  private boolean isConverge;
+  private AtomicBoolean isConverge;
 
   private String modelPath;
 
@@ -79,7 +80,7 @@ public final class SmallLayeredNeuralNetworkTrainer
     if (isMaster(peer)) {
       Log.info("Begin to train");
     }
-    this.isConverge = false;
+    this.isConverge = new AtomicBoolean(false);
     this.conf = peer.getConfiguration();
     this.iterations = 0;
     this.modelPath = conf.get("modelPath");
@@ -128,7 +129,7 @@ public final class SmallLayeredNeuralNetworkTrainer
         mergeUpdates(peer);
       }
       peer.sync();
-      if (this.isConverge) {
+      if (this.isConverge.get()) {
         break;
       }
     }
@@ -150,9 +151,9 @@ public final class SmallLayeredNeuralNetworkTrainer
       DoubleMatrix[] preWeightUpdates = inMessage.getPrevMatrices();
       this.inMemoryModel.setWeightMatrices(newWeights);
       this.inMemoryModel.setPrevWeightMatrices(preWeightUpdates);
-      this.isConverge = inMessage.isConverge();
+      this.isConverge.set(inMessage.isConverge());
       // check converge
-      if (isConverge) {
+      if (isConverge.get()) {
         return;
       }
     }
@@ -205,7 +206,7 @@ public final class SmallLayeredNeuralNetworkTrainer
     int numMessages = peer.getNumCurrentMessages();
     boolean isConverge = false;
     if (numMessages == 0) { // converges
-      this.isConverge = true;
+      this.isConverge.set(true);
       return;
     }
 

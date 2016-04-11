@@ -50,6 +50,13 @@
     </dependency>
     <dependency>
       <groupId>org.apache.hama</groupId>
+      <artifactId>hama-core</artifactId>
+      <version>${hama.version}</version>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hama</groupId>
       <artifactId>hama-ml</artifactId>
       <version>${hama.version}</version>
     </dependency>

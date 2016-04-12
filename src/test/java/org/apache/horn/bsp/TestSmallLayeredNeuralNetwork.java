@@ -38,16 +38,17 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.SequenceFile;
+import org.apache.hama.HamaConfiguration;
 import org.apache.hama.commons.io.VectorWritable;
 import org.apache.hama.commons.math.DenseDoubleMatrix;
 import org.apache.hama.commons.math.DenseDoubleVector;
 import org.apache.hama.commons.math.DoubleMatrix;
 import org.apache.hama.commons.math.DoubleVector;
 import org.apache.hama.commons.math.FunctionFactory;
-import org.apache.horn.bsp.AbstractLayeredNeuralNetwork.LearningStyle;
-import org.apache.horn.bsp.AbstractLayeredNeuralNetwork.TrainingMethod;
 import org.apache.hama.ml.util.DefaultFeatureTransformer;
 import org.apache.hama.ml.util.FeatureTransformer;
+import org.apache.horn.bsp.AbstractLayeredNeuralNetwork.LearningStyle;
+import org.apache.horn.bsp.AbstractLayeredNeuralNetwork.TrainingMethod;
 import org.junit.Test;
 import org.mortbay.log.Log;
 
@@ -95,7 +96,7 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
     }
 
     // read from file
-    SmallLayeredNeuralNetwork annCopy = new SmallLayeredNeuralNetwork(modelPath);
+    SmallLayeredNeuralNetwork annCopy = new SmallLayeredNeuralNetwork(new HamaConfiguration(), modelPath);
     assertEquals(annCopy.getClass().getSimpleName(), annCopy.getModelType());
     assertEquals(modelPath, annCopy.getModelPath());
     assertEquals(learningRate, annCopy.getLearningRate(), 0.000001);
@@ -227,7 +228,7 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
     } catch (IOException e) {
       e.printStackTrace();
     }
-    SmallLayeredNeuralNetwork annCopy = new SmallLayeredNeuralNetwork(modelPath);
+    SmallLayeredNeuralNetwork annCopy = new SmallLayeredNeuralNetwork(new HamaConfiguration(), modelPath);
     // test on instances
     for (int i = 0; i < instances.length; ++i) {
       DoubleVector input = new DenseDoubleVector(instances[i]).slice(2);
@@ -277,7 +278,7 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
     } catch (IOException e) {
       e.printStackTrace();
     }
-    SmallLayeredNeuralNetwork annCopy = new SmallLayeredNeuralNetwork(modelPath);
+    SmallLayeredNeuralNetwork annCopy = new SmallLayeredNeuralNetwork(new HamaConfiguration(), modelPath);
     // test on instances
     for (int i = 0; i < instances.length; ++i) {
       DoubleVector input = new DenseDoubleVector(instances[i]).slice(2);
@@ -328,7 +329,7 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
     } catch (IOException e) {
       e.printStackTrace();
     }
-    SmallLayeredNeuralNetwork annCopy = new SmallLayeredNeuralNetwork(modelPath);
+    SmallLayeredNeuralNetwork annCopy = new SmallLayeredNeuralNetwork(new HamaConfiguration(), modelPath);
     // test on instances
     for (int i = 0; i < instances.length; ++i) {
       DoubleVector input = new DenseDoubleVector(instances[i]).slice(2);
@@ -505,7 +506,7 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
     trainingParameters.put("training.max.iterations", "2000");
     trainingParameters.put("training.batch.size", "300");
     trainingParameters.put("convergence.check.interval", "1000");
-    ann.train(tmpDatasetPath, trainingParameters);
+    ann.train(new HamaConfiguration(), tmpDatasetPath, trainingParameters);
 
     long end = new Date().getTime();
 
@@ -614,7 +615,7 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
     trainingParameters.put("training.max.iterations", "2000");
     trainingParameters.put("training.batch.size", "300");
     trainingParameters.put("convergence.check.interval", "1000");
-    ann.train(tmpDatasetPath, trainingParameters);
+    ann.train(new HamaConfiguration(), tmpDatasetPath, trainingParameters);
     
 
     long end = new Date().getTime();

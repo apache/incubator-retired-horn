@@ -21,6 +21,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.Writable;
 
 /**
@@ -29,10 +30,10 @@ import org.apache.hadoop.io.Writable;
 public class PropMessage<M extends Writable, W extends Writable> implements
     Writable {
 
-  M message;
-  W weight;
+  DoubleWritable message;
+  DoubleWritable weight;
 
-  public PropMessage(M message, W weight) {
+  public PropMessage(DoubleWritable message, DoubleWritable weight) {
     this.message = message;
     this.weight = weight;
   }
@@ -40,12 +41,22 @@ public class PropMessage<M extends Writable, W extends Writable> implements
   /**
    * @return the activation or error message
    */
-  public M getMessage() {
-    return message;
+  public double getMessage() {
+    return message.get();
   }
 
-  public W getWeight() {
-    return weight;
+  public double getInput() {
+    // returns the input
+    return message.get();
+  }
+  
+  public double getDelta() {
+    // returns the delta
+    return message.get();
+  }
+  
+  public double getWeight() {
+    return weight.get();
   }
 
   @Override

@@ -20,6 +20,7 @@ package org.apache.horn.bsp;
 import java.util.Map;
 
 import org.apache.hadoop.fs.Path;
+import org.apache.hama.HamaConfiguration;
 import org.apache.hama.commons.math.DenseDoubleVector;
 import org.apache.hama.commons.math.DoubleFunction;
 import org.apache.hama.commons.math.DoubleMatrix;
@@ -55,13 +56,14 @@ public class AutoEncoder {
         FunctionFactory.createDoubleFunction("Sigmoid"));
     model.addLayer(inputDimensions, true,
         FunctionFactory.createDoubleFunction("Sigmoid"));
-    model.setLearningStyle(AbstractLayeredNeuralNetwork.LearningStyle.UNSUPERVISED);
+    model
+        .setLearningStyle(AbstractLayeredNeuralNetwork.LearningStyle.UNSUPERVISED);
     model.setCostFunction(FunctionFactory
         .createDoubleDoubleFunction("SquaredError"));
   }
 
-  public AutoEncoder(String modelPath) {
-    model = new SmallLayeredNeuralNetwork(modelPath);
+  public AutoEncoder(HamaConfiguration conf, String modelPath) {
+    model = new SmallLayeredNeuralNetwork(conf, modelPath);
   }
 
   public AutoEncoder setLearningRate(double learningRate) {
@@ -78,7 +80,7 @@ public class AutoEncoder {
     model.setRegularizationWeight(regularizationWeight);
     return this;
   }
-  
+
   public AutoEncoder setModelPath(String modelPath) {
     model.setModelPath(modelPath);
     return this;
@@ -91,8 +93,9 @@ public class AutoEncoder {
    * @param dataInputPath
    * @param trainingParams
    */
-  public void train(Path dataInputPath, Map<String, String> trainingParams) {
-    model.train(dataInputPath, trainingParams);
+  public void train(HamaConfiguration conf, Path dataInputPath,
+      Map<String, String> trainingParams) {
+    model.train(conf, dataInputPath, trainingParams);
   }
 
   /**
@@ -129,13 +132,13 @@ public class AutoEncoder {
    * @return The compressed information.
    */
   private DoubleVector transform(DoubleVector inputInstance, int inputLayer) {
-    DoubleVector internalInstance = new DenseDoubleVector(inputInstance.getDimension() + 1);
+    DoubleVector internalInstance = new DenseDoubleVector(
+        inputInstance.getDimension() + 1);
     internalInstance.set(0, 1);
     for (int i = 0; i < inputInstance.getDimension(); ++i) {
       internalInstance.set(i + 1, inputInstance.get(i));
     }
-    DoubleFunction squashingFunction = model
-        .getSquashingFunction(inputLayer);
+    DoubleFunction squashingFunction = model.getSquashingFunction(inputLayer);
     DoubleMatrix weightMatrix = null;
     if (inputLayer == 0) {
       weightMatrix = this.getEncodeWeightMatrix();
@@ -149,6 +152,7 @@ public class AutoEncoder {
 
   /**
    * Encode the input instance.
+   * 
    * @param inputInstance
    * @return a new vector with the encode input instance.
    */
@@ -156,13 +160,16 @@ public class AutoEncoder {
     Preconditions
         .checkArgument(
             inputInstance.getDimension() == model.getLayerSize(0) - 1,
-            String.format("The dimension of input instance is %d, but the model requires dimension %d.",
+            String
+                .format(
+                    "The dimension of input instance is %d, but the model requires dimension %d.",
                     inputInstance.getDimension(), model.getLayerSize(1) - 1));
     return this.transform(inputInstance, 0);
   }
 
   /**
    * Decode the input instance.
+   * 
    * @param inputInstance
    * @return a new vector with the decode input instance.
    */
@@ -170,22 +177,27 @@ public class AutoEncoder {
     Preconditions
         .checkArgument(
             inputInstance.getDimension() == model.getLayerSize(1) - 1,
-            String.format("The dimension of input instance is %d, but the model requires dimension %d.",
+            String
+                .format(
+                    "The dimension of input instance is %d, but the model requires dimension %d.",
                     inputInstance.getDimension(), model.getLayerSize(1) - 1));
     return this.transform(inputInstance, 1);
   }
-  
+
   /**
    * Get the label(s) according to the given features.
+   * 
    * @param inputInstance
-   * @return a new vector with output of the model according to given feature instance.
+   * @return a new vector with output of the model according to given feature
+   *         instance.
    */
   public DoubleVector getOutput(DoubleVector inputInstance) {
     return model.getOutput(inputInstance);
   }
-  
+
   /**
    * Set the feature transformer.
+   * 
    * @param featureTransformer
    */
   public void setFeatureTransformer(FeatureTransformer featureTransformer) {

@@ -18,13 +18,34 @@
 package org.apache.horn.trainer;
 
 import org.apache.hadoop.io.Writable;
+import org.apache.horn.funcs.Sigmoid;
 
 public abstract class Neuron<M extends Writable> implements NeuronInterface<M> {
   double output;
   double weight;
 
-  public void propagate(double gradient) {
+  /**
+   * @return the theta value of this neuron.
+   */
+  public double getTheta() {
     // TODO Auto-generated method stub
+    return 0;
+  }
+
+  public void feedforward(double sum) {
+    // TODO Auto-generated method stub
+    // squashing
+  }
+
+  public void backpropagate(double gradient) {
+    // TODO Auto-generated method stub
+
+  }
+
+  public double activation(double sum) {
+    // TODO Auto-generated method stub
+    this.output = new Sigmoid().apply(sum);
+    return output;
   }
 
   public void setOutput(double output) {
@@ -33,6 +54,12 @@ public abstract class Neuron<M extends Writable> implements NeuronInterface<M> {
 
   public double getOutput() {
     return output;
+  }
+
+  // ////////* Below methods will communicate with parameter server */
+
+  public double getPreviousWeight() {
+    return weight;
   }
 
   public void push(double weight) {

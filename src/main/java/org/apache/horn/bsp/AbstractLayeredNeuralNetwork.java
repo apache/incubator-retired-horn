@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.List;
 
 import org.apache.hadoop.io.WritableUtils;
+import org.apache.hama.HamaConfiguration;
 import org.apache.hama.commons.math.DoubleDoubleFunction;
 import org.apache.hama.commons.math.DoubleFunction;
 import org.apache.hama.commons.math.DoubleMatrix;
@@ -81,8 +82,8 @@ abstract class AbstractLayeredNeuralNetwork extends NeuralNetwork {
     this.learningStyle = LearningStyle.SUPERVISED;
   }
 
-  public AbstractLayeredNeuralNetwork(String modelPath) {
-    super(modelPath);
+  public AbstractLayeredNeuralNetwork(HamaConfiguration conf, String modelPath) {
+    super(conf, modelPath);
   }
 
   /**

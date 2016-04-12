@@ -17,27 +17,26 @@
  */
 package org.apache.horn.bsp;
 
-import com.google.common.base.Preconditions;
-import com.google.common.io.Closeables;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Map;
+
 import org.apache.commons.lang.SerializationUtils;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
+import org.apache.hama.HamaConfiguration;
 import org.apache.hama.ml.util.DefaultFeatureTransformer;
 import org.apache.hama.ml.util.FeatureTransformer;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Map;
+import com.google.common.base.Preconditions;
+import com.google.common.io.Closeables;
 
 /**
  * NeuralNetwork defines the general operations for all the derivative models.
@@ -47,6 +46,8 @@ import java.util.Map;
  * 
  */
 abstract class NeuralNetwork implements Writable {
+  protected HamaConfiguration conf;
+  protected FileSystem fs;
 
   private static final double DEFAULT_LEARNING_RATE = 0.5;
 
@@ -67,12 +68,19 @@ abstract class NeuralNetwork implements Writable {
   }
 
   public NeuralNetwork(String modelPath) {
+  }
+
+  public NeuralNetwork(HamaConfiguration conf, String modelPath) {
     try {
+      this.conf = conf;
+      this.fs = FileSystem.get(conf);
       this.modelPath = modelPath;
+
       this.readFromModel();
     } catch (IOException e) {
       e.printStackTrace();
     }
+
   }
 
   /**
@@ -107,12 +115,12 @@ abstract class NeuralNetwork implements Writable {
    * @param trainingParams The parameters for training.
    * @throws IOException
    */
-  public void train(Path dataInputPath, Map<String, String> trainingParams) {
+  public void train(HamaConfiguration hamaConf, Path dataInputPath, Map<String, String> trainingParams) {
     Preconditions.checkArgument(this.modelPath != null,
         "Please set the model path before training.");
     // train with BSP job
     try {
-      trainInternal(dataInputPath, trainingParams);
+      trainInternal(hamaConf, dataInputPath, trainingParams);
       // write the trained model back to model path
       this.readFromModel();
     } catch (IOException e) {
@@ -130,9 +138,9 @@ abstract class NeuralNetwork implements Writable {
    * @param dataInputPath
    * @param trainingParams
    */
-  protected abstract void trainInternal(Path dataInputPath,
-      Map<String, String> trainingParams) throws IOException,
-      InterruptedException, ClassNotFoundException;
+  protected abstract void trainInternal(HamaConfiguration hamaConf,
+      Path dataInputPath, Map<String, String> trainingParams)
+      throws IOException, InterruptedException, ClassNotFoundException;
 
   /**
    * Read the model meta-data from the specified location.
@@ -142,18 +150,9 @@ abstract class NeuralNetwork implements Writable {
   protected void readFromModel() throws IOException {
     Preconditions.checkArgument(this.modelPath != null,
         "Model path has not been set.");
-    Configuration conf = new Configuration();
-    FSDataInputStream is = null;
-    try {
-      URI uri = new URI(this.modelPath);
-      FileSystem fs = FileSystem.get(uri, conf);
-      is = new FSDataInputStream(fs.open(new Path(modelPath)));
-      this.readFields(is);
-    } catch (URISyntaxException e) {
-      e.printStackTrace();
-    } finally {
-      Closeables.close(is, false);
-    }
+    FSDataInputStream is = new FSDataInputStream(fs.open(new Path(modelPath)));
+    this.readFields(is);
+    Closeables.close(is, false);
   }
 
   /**
@@ -164,16 +163,9 @@ abstract class NeuralNetwork implements Writable {
   public void writeModelToFile() throws IOException {
     Preconditions.checkArgument(this.modelPath != null,
         "Model path has not been set.");
-    Configuration conf = new Configuration();
-    FSDataOutputStream is = null;
-    try {
-      URI uri = new URI(this.modelPath);
-      FileSystem fs = FileSystem.get(uri, conf);
-      is = fs.create(new Path(this.modelPath), true);
-      this.write(is);
-    } catch (URISyntaxException e) {
-      e.printStackTrace();
-    }
+    
+    FSDataOutputStream is = fs.create(new Path(this.modelPath), true);
+    this.write(is);
 
     Closeables.close(is, false);
   }

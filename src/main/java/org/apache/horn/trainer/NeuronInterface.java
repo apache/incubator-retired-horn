@@ -20,9 +20,12 @@ package org.apache.horn.trainer;
 import java.io.IOException;
 
 import org.apache.hadoop.io.Writable;
+import org.apache.hama.HamaConfiguration;
 
 public interface NeuronInterface<M extends Writable> {
 
+  public void setup(HamaConfiguration conf);
+  
   /**
    * This method is called when the messages are propagated from the lower
    * layer. It can be used to determine if the neuron would activate, or fire.
@@ -30,7 +33,7 @@ public interface NeuronInterface<M extends Writable> {
    * @param messages
    * @throws IOException
    */
-  public void upward(Iterable<M> messages) throws IOException;
+  public void forward(Iterable<M> messages) throws IOException;
 
   /**
    * This method is called when the errors are propagated from the upper layer.
@@ -40,6 +43,6 @@ public interface NeuronInterface<M extends Writable> {
    * @param messages
    * @throws IOException
    */
-  public void downward(Iterable<M> messages) throws IOException;
+  public void backward(Iterable<M> messages) throws IOException;
   
 }

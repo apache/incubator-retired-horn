@@ -53,9 +53,6 @@ public class Trainer extends BSP {
     this.iterations = 0;
     this.maxIterations = peer.getConfiguration()
         .getInt("horn.max.iteration", 1);
-    this.batchSize = peer.getConfiguration()
-        .getInt("horn.minibatch.size", 1000);
-
     LOG.info("max iteration: " + this.maxIterations);
     
     // loads subset of neural network model replica into memory
@@ -71,7 +68,7 @@ public class Trainer extends BSP {
       // Fetch latest parameters
       fetchParameters(peer);
       // Perform the batch
-      doMinibatch(peer);
+      performBatch(peer);
       // Push parameters
       pushParameters(peer);
 
@@ -90,7 +87,7 @@ public class Trainer extends BSP {
    * @throws InterruptedException 
    * @throws SyncException 
    */
-  private void doMinibatch(BSPPeer peer) throws IOException, SyncException, InterruptedException {
+  private void performBatch(BSPPeer peer) throws IOException, SyncException, InterruptedException {
     double avgTrainingError = 0.0;
 
     int trains = 0;

@@ -26,7 +26,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang.math.RandomUtils;
-import org.apache.hadoop.conf.Configuration;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
@@ -41,7 +43,6 @@ import org.apache.hama.commons.math.DoubleFunction;
 import org.apache.hama.commons.math.DoubleMatrix;
 import org.apache.hama.commons.math.DoubleVector;
 import org.apache.hama.commons.math.FunctionFactory;
-import org.mortbay.log.Log;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -60,6 +61,9 @@ import com.google.common.collect.Lists;
  */
 public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
 
+  private static final Log LOG = LogFactory
+      .getLog(SmallLayeredNeuralNetwork.class);
+  
   /* Weights between neurons at adjacent layers */
   protected List<DoubleMatrix> weightMatrixList;
 
@@ -78,8 +82,8 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
     this.squashingFunctionList = Lists.newArrayList();
   }
 
-  public SmallLayeredNeuralNetwork(String modelPath) {
-    super(modelPath);
+  public SmallLayeredNeuralNetwork(HamaConfiguration conf, String modelPath) {
+    super(conf, modelPath);
   }
 
   @Override
@@ -94,6 +98,7 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
       size += 1;
     }
 
+    LOG.info("Add Layer: " + size);
     this.layerSizeList.add(size);
     int layerIdx = this.layerSizeList.size() - 1;
     if (isFinalLayer) {
@@ -497,11 +502,13 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
   }
 
   @Override
-  protected void trainInternal(Path dataInputPath,
+  protected void trainInternal(HamaConfiguration hamaConf, Path dataInputPath,
       Map<String, String> trainingParams) throws IOException,
       InterruptedException, ClassNotFoundException {
     // add all training parameters to configuration
-    Configuration conf = new Configuration();
+    this.conf = hamaConf;
+    this.fs = FileSystem.get(conf);
+    
     for (Map.Entry<String, String> entry : trainingParams.entrySet()) {
       conf.set(entry.getKey(), entry.getValue());
     }
@@ -521,10 +528,8 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
     conf.set("modelPath", this.modelPath);
     this.writeModelToFile();
 
-    HamaConfiguration hamaConf = new HamaConfiguration(conf);
-
     // create job
-    BSPJob job = new BSPJob(hamaConf, SmallLayeredNeuralNetworkTrainer.class);
+    BSPJob job = new BSPJob(conf, SmallLayeredNeuralNetworkTrainer.class);
     job.setJobName("Small scale Neural Network training");
     job.setJarByClass(SmallLayeredNeuralNetworkTrainer.class);
     job.setBspClass(SmallLayeredNeuralNetworkTrainer.class);
@@ -537,12 +542,12 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
     job.setOutputFormat(org.apache.hama.bsp.NullOutputFormat.class);
 
     int numTasks = conf.getInt("tasks", 1);
-    Log.info(String.format("Number of tasks: %d\n", numTasks));
+    LOG.info(String.format("Number of tasks: %d\n", numTasks));
     job.setNumBspTask(numTasks);
     job.waitForCompletion(true);
 
     // reload learned model
-    Log.info(String.format("Reload model from %s.", this.modelPath));
+    LOG.info(String.format("Reload model from %s.", this.modelPath));
     this.readFromModel();
 
   }

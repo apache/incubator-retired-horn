@@ -44,19 +44,20 @@ public class NeuralNetwork {
       printUsage();
       return;
     }
+    HamaConfiguration conf = new HamaConfiguration();
     String mode = args[0];
+    
     if (mode.equalsIgnoreCase("label")) {
       if (args.length < 4) {
         printUsage();
         return;
       }
-      HamaConfiguration conf = new HamaConfiguration();
 
       String featureDataPath = args[1];
       String resultDataPath = args[2];
       String modelPath = args[3];
 
-      SmallLayeredNeuralNetwork ann = new SmallLayeredNeuralNetwork(modelPath);
+      SmallLayeredNeuralNetwork ann = new SmallLayeredNeuralNetwork(conf, modelPath);
 
       // process data in streaming approach
       FileSystem fs = FileSystem.get(new URI(featureDataPath), conf);
@@ -173,11 +174,11 @@ public class NeuralNetwork {
       ann.setModelPath(trainedModelPath);
 
       Map<String, String> trainingParameters = new HashMap<String, String>();
-      trainingParameters.put("tasks", "5");
+      trainingParameters.put("tasks", "2");
       trainingParameters.put("training.max.iterations", "" + iteration);
       trainingParameters.put("training.batch.size", "300");
       trainingParameters.put("convergence.check.interval", "1000");
-      ann.train(new Path(trainingDataPath), trainingParameters);
+      ann.train(conf, new Path(trainingDataPath), trainingParameters);
     }
 
   }

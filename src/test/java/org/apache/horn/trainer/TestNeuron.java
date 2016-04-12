@@ -24,7 +24,7 @@ import java.util.List;
 import junit.framework.TestCase;
 
 import org.apache.hadoop.io.DoubleWritable;
-import org.apache.hama.commons.math.Sigmoid;
+import org.apache.hama.HamaConfiguration;
 
 public class TestNeuron extends TestCase {
   private static double learningRate = 0.1;
@@ -35,34 +35,35 @@ public class TestNeuron extends TestCase {
       Neuron<PropMessage<DoubleWritable, DoubleWritable>> {
 
     @Override
-    public void upward(
+    public void setup(HamaConfiguration conf) {
+    }
+
+    @Override
+    public void forward(
         Iterable<PropMessage<DoubleWritable, DoubleWritable>> messages)
         throws IOException {
       double sum = 0;
       for (PropMessage<DoubleWritable, DoubleWritable> m : messages) {
-        sum += m.getMessage().get() * m.getWeight().get();
+        sum += m.getInput() * m.getWeight();
       }
       sum += (bias * theta);
-
-      double output = new Sigmoid().apply(sum);
-      this.setOutput(output);
-      this.propagate(output);
+      feedforward(activation(sum));
     }
 
     @Override
-    public void downward(
+    public void backward(
         Iterable<PropMessage<DoubleWritable, DoubleWritable>> messages)
         throws IOException {
       for (PropMessage<DoubleWritable, DoubleWritable> m : messages) {
         // Calculates error gradient for each neuron
         double gradient = this.getOutput() * (1 - this.getOutput())
-            * m.getMessage().get() * m.getWeight().get();
+            * m.getDelta() * m.getWeight();
 
         // Propagates to lower layer
-        this.propagate(gradient);
+        backpropagate(gradient);
 
         // Weight corrections
-        double weight = learningRate * this.getOutput() * m.getMessage().get();
+        double weight = learningRate * this.getOutput() * m.getDelta();
         this.push(weight);
       }
     }
@@ -77,14 +78,14 @@ public class TestNeuron extends TestCase {
         1.0), new DoubleWritable(0.4)));
 
     MyNeuron n = new MyNeuron();
-    n.upward(x);
+    n.forward(x);
     assertEquals(0.5249791874789399, n.getOutput());
 
     x.clear();
     x.add(new PropMessage<DoubleWritable, DoubleWritable>(new DoubleWritable(
         -0.1274), new DoubleWritable(-1.2)));
-    n.downward(x);
+    n.backward(x);
     assertEquals(-0.006688234848481696, n.getUpdate());
   }
-  
+
 }

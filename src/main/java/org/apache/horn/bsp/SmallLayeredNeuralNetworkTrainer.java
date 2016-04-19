@@ -33,6 +33,7 @@ import org.apache.hama.commons.io.VectorWritable;
 import org.apache.hama.commons.math.DenseDoubleMatrix;
 import org.apache.hama.commons.math.DoubleMatrix;
 import org.apache.hama.commons.math.DoubleVector;
+import org.apache.hama.commons.math.FunctionFactory;
 import org.apache.hama.ipc.RPC;
 
 import com.google.common.base.Preconditions;
@@ -88,10 +89,9 @@ public final class SmallLayeredNeuralNetworkTrainer
       BSPPeer<LongWritable, VectorWritable, NullWritable, NullWritable, SmallLayeredNeuralNetworkMessage> peer) {
     // At least one master & slave worker exist.
     Preconditions.checkArgument(peer.getNumPeers() >= 2);
-
     this.conf = peer.getConfiguration();
 
-    String modelPath = conf.get("modelPath");
+    String modelPath = conf.get("model.path");
     this.inMemoryModel = new SmallLayeredNeuralNetwork(conf, modelPath);
 
     this.batchSize = conf.getInt("training.batch.size", 50);
@@ -135,8 +135,7 @@ public final class SmallLayeredNeuralNetworkTrainer
     // write model to modelPath
     if (isMaster(peer)) {
       try {
-        LOG.info(String.format("Write model back to %s\n",
-            inMemoryModel.getModelPath()));
+        LOG.info("Write model back to " + inMemoryModel.getModelPath());
         this.inMemoryModel.writeModelToFile();
       } catch (IOException e) {
         e.printStackTrace();

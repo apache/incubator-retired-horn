@@ -160,9 +160,9 @@ public class NeuralNetwork {
 
       // train the model
       SmallLayeredNeuralNetwork ann = new SmallLayeredNeuralNetwork();
-      ann.setLearningRate(learningRate);
-      ann.setMomemtumWeight(momemtumWeight);
-      ann.setRegularizationWeight(regularizationWeight);
+      // ann.setLearningRate(learningRate);
+      // ann.setMomemtumWeight(momemtumWeight);
+      // ann.setRegularizationWeight(regularizationWeight);
       ann.addLayer(featureDimension, false,
           FunctionFactory.createDoubleFunction("Sigmoid"));
       ann.addLayer(featureDimension, false,
@@ -178,7 +178,7 @@ public class NeuralNetwork {
       trainingParameters.put("training.max.iterations", "" + iteration);
       trainingParameters.put("training.batch.size", "300");
       trainingParameters.put("convergence.check.interval", "1000");
-      ann.train(conf, new Path(trainingDataPath), trainingParameters);
+      // ann.train(conf, new Path(trainingDataPath), trainingParameters);
     }
 
   }

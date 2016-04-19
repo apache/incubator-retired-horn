@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.horn.trainer;
+package org.apache.horn.bsp;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -27,17 +27,24 @@ import org.apache.hadoop.io.Writable;
 /**
  * Message wrapper for a propagating message
  */
-public class PropMessage<M extends Writable, W extends Writable> implements
+public class Synapse<M extends Writable, W extends Writable> implements
     Writable {
 
   DoubleWritable message;
   DoubleWritable weight;
+  DoubleWritable prevWeight;
 
-  public PropMessage(DoubleWritable message, DoubleWritable weight) {
+  public Synapse(DoubleWritable message, DoubleWritable weight) {
     this.message = message;
     this.weight = weight;
   }
 
+  public Synapse(DoubleWritable message, DoubleWritable weight, DoubleWritable prevWeight) {
+    this.message = message;
+    this.weight = weight;
+    this.prevWeight = prevWeight;
+  }
+  
   /**
    * @return the activation or error message
    */
@@ -57,6 +64,10 @@ public class PropMessage<M extends Writable, W extends Writable> implements
   
   public double getWeight() {
     return weight.get();
+  }
+  
+  public double getPrevWeight() {
+    return prevWeight.get();
   }
 
   @Override

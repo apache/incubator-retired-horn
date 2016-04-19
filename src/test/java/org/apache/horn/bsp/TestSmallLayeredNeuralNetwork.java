@@ -70,11 +70,11 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
     ann.setCostFunction(FunctionFactory
         .createDoubleDoubleFunction("SquaredError"));
     double learningRate = 0.2;
-    ann.setLearningRate(learningRate);
+    // ann.setLearningRate(learningRate);
     double momentumWeight = 0.5;
-    ann.setMomemtumWeight(momentumWeight);
+    // ann.setMomemtumWeight(momentumWeight);
     double regularizationWeight = 0.05;
-    ann.setRegularizationWeight(regularizationWeight);
+    //ann.setRegularizationWeight(regularizationWeight);
     // intentionally initialize all weights to 0.5
     DoubleMatrix[] matrices = new DenseDoubleMatrix[2];
     matrices[0] = new DenseDoubleMatrix(5, 3, 0.2);
@@ -99,10 +99,10 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
     SmallLayeredNeuralNetwork annCopy = new SmallLayeredNeuralNetwork(new HamaConfiguration(), modelPath);
     assertEquals(annCopy.getClass().getSimpleName(), annCopy.getModelType());
     assertEquals(modelPath, annCopy.getModelPath());
-    assertEquals(learningRate, annCopy.getLearningRate(), 0.000001);
-    assertEquals(momentumWeight, annCopy.getMomemtumWeight(), 0.000001);
-    assertEquals(regularizationWeight, annCopy.getRegularizationWeight(),
-        0.000001);
+    // assertEquals(learningRate, annCopy.getLearningRate(), 0.000001);
+    // assertEquals(momentumWeight, annCopy.getMomemtumWeight(), 0.000001);
+    //assertEquals(regularizationWeight, annCopy.getRegularizationWeight(),
+    //    0.000001);
     assertEquals(TrainingMethod.GRADIENT_DESCENT, annCopy.getTrainingMethod());
     assertEquals(LearningStyle.UNSUPERVISED, annCopy.getLearningStyle());
 
@@ -137,7 +137,7 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
         FunctionFactory.createDoubleFunction("IdentityFunction"));
     ann.setCostFunction(FunctionFactory
         .createDoubleDoubleFunction("SquaredError"));
-    ann.setLearningRate(0.1);
+    // ann.setLearningRate(0.1);
     // intentionally initialize all weights to 0.5
     DoubleMatrix[] matrices = new DenseDoubleMatrix[2];
     matrices[0] = new DenseDoubleMatrix(5, 3, 0.5);
@@ -157,7 +157,7 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
     ann2.addLayer(1, true, FunctionFactory.createDoubleFunction("Sigmoid"));
     ann2.setCostFunction(FunctionFactory
         .createDoubleDoubleFunction("SquaredError"));
-    ann2.setLearningRate(0.3);
+    // ann2.setLearningRate(0.3);
     // intentionally initialize all weights to 0.5
     DoubleMatrix[] matrices2 = new DenseDoubleMatrix[2];
     matrices2[0] = new DenseDoubleMatrix(3, 3, 0.5);
@@ -176,7 +176,7 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
     ann3.addLayer(1, true, FunctionFactory.createDoubleFunction("Sigmoid"));
     ann3.setCostFunction(FunctionFactory
         .createDoubleDoubleFunction("SquaredError"));
-    ann3.setLearningRate(0.3);
+    // ann3.setLearningRate(0.3);
     // intentionally initialize all weights to 0.5
     DoubleMatrix[] initMatrices = new DenseDoubleMatrix[2];
     initMatrices[0] = new DenseDoubleMatrix(3, 3, 0.5);
@@ -196,8 +196,8 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
     ann.addLayer(1, true, FunctionFactory.createDoubleFunction("Sigmoid"));
     ann.setCostFunction(FunctionFactory
         .createDoubleDoubleFunction("SquaredError"));
-    ann.setLearningRate(0.5);
-    ann.setMomemtumWeight(0.0);
+    // ann.setLearningRate(0.5);
+    // ann.setMomemtumWeight(0.0);
 
     int iterations = 50000; // iteration should be set to a very large number
     double[][] instances = { { 0, 1, 1 }, { 0, 0, 0 }, { 1, 0, 1 }, { 1, 1, 0 } };
@@ -249,8 +249,8 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
     ann.addLayer(1, true, FunctionFactory.createDoubleFunction("Sigmoid"));
     ann.setCostFunction(FunctionFactory
         .createDoubleDoubleFunction("SquaredError"));
-    ann.setLearningRate(0.6);
-    ann.setMomemtumWeight(0.3);
+    // ann.setLearningRate(0.6);
+    // ann.setMomemtumWeight(0.3);
 
     int iterations = 2000; // iteration should be set to a very large number
     double[][] instances = { { 0, 1, 1 }, { 0, 0, 0 }, { 1, 0, 1 }, { 1, 1, 0 } };
@@ -299,9 +299,9 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
     ann.addLayer(1, true, FunctionFactory.createDoubleFunction("Sigmoid"));
     ann.setCostFunction(FunctionFactory
         .createDoubleDoubleFunction("SquaredError"));
-    ann.setLearningRate(0.7);
-    ann.setMomemtumWeight(0.5);
-    ann.setRegularizationWeight(0.002);
+    // ann.setLearningRate(0.7);
+    // ann.setMomemtumWeight(0.5);
+    //ann.setRegularizationWeight(0.002);
 
     int iterations = 5000; // iteration should be set to a very large number
     double[][] instances = { { 0, 1, 1 }, { 0, 0, 0 }, { 1, 0, 1 }, { 1, 1, 0 } };
@@ -378,9 +378,9 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
         instanceList.size() - 100);
 
     SmallLayeredNeuralNetwork ann = new SmallLayeredNeuralNetwork();
-    ann.setLearningRate(0.001);
-    ann.setMomemtumWeight(0.1);
-    ann.setRegularizationWeight(0.01);
+    // ann.setLearningRate(0.001);
+    // ann.setMomemtumWeight(0.1);
+    //ann.setRegularizationWeight(0.01);
     ann.addLayer(dimension, false,
         FunctionFactory.createDoubleFunction("Sigmoid"));
     ann.addLayer(dimension, false,
@@ -486,9 +486,9 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
     // create model
     int dimension = 8;
     SmallLayeredNeuralNetwork ann = new SmallLayeredNeuralNetwork();
-    ann.setLearningRate(0.7);
-    ann.setMomemtumWeight(0.5);
-    ann.setRegularizationWeight(0.1);
+    // ann.setLearningRate(0.7);
+    // ann.setMomemtumWeight(0.5);
+    //ann.setRegularizationWeight(0.1);
     ann.addLayer(dimension, false,
         FunctionFactory.createDoubleFunction("Sigmoid"));
     ann.addLayer(dimension, false,
@@ -506,7 +506,7 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
     trainingParameters.put("training.max.iterations", "2000");
     trainingParameters.put("training.batch.size", "300");
     trainingParameters.put("convergence.check.interval", "1000");
-    ann.train(new HamaConfiguration(), tmpDatasetPath, trainingParameters);
+    //ann.train(new HamaConfiguration(), tmpDatasetPath, trainingParameters);
 
     long end = new Date().getTime();
 
@@ -528,7 +528,7 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
         (double) (end - start) / 1000));
     Log.info(String.format("Relative error: %f%%\n", errorRate * 100));
   }
-  
+
   public void testLogisticRegressionDistributedVersionWithFeatureTransformer() {
     // write data into a sequence file
     String tmpStrDatasetPath = "/tmp/logistic_regression_data_feature_transformer";
@@ -591,9 +591,9 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
     // create model
     int dimension = 8;
     SmallLayeredNeuralNetwork ann = new SmallLayeredNeuralNetwork();
-    ann.setLearningRate(0.7);
-    ann.setMomemtumWeight(0.5);
-    ann.setRegularizationWeight(0.1);
+    // ann.setLearningRate(0.7);
+    // ann.setMomemtumWeight(0.5);
+    //ann.setRegularizationWeight(0.1);
     ann.addLayer(dimension, false,
         FunctionFactory.createDoubleFunction("Sigmoid"));
     ann.addLayer(dimension, false,
@@ -615,7 +615,7 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
     trainingParameters.put("training.max.iterations", "2000");
     trainingParameters.put("training.batch.size", "300");
     trainingParameters.put("convergence.check.interval", "1000");
-    ann.train(new HamaConfiguration(), tmpDatasetPath, trainingParameters);
+    //ann.train(new HamaConfiguration(), tmpDatasetPath, trainingParameters);
     
 
     long end = new Date().getTime();

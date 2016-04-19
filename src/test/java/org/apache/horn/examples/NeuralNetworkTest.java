@@ -25,9 +25,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -39,7 +37,7 @@ import org.apache.hama.HamaConfiguration;
 import org.apache.hama.commons.io.VectorWritable;
 import org.apache.hama.commons.math.DenseDoubleVector;
 import org.apache.hama.commons.math.DoubleVector;
-import org.apache.hama.commons.math.FunctionFactory;
+import org.apache.horn.bsp.HornJob;
 import org.apache.horn.bsp.SmallLayeredNeuralNetwork;
 
 /**
@@ -198,33 +196,16 @@ public class NeuralNetworkTest extends HamaCluster {
     }
 
     try {
-      int iteration = 1000;
-      double learningRate = 0.4;
-      double momemtumWeight = 0.2;
-      double regularizationWeight = 0.01;
+      HornJob ann = MultiLayerPerceptron.createJob(conf, MODEL_PATH,
+          SEQTRAIN_DATA, 0.4, 0.2, 0.01, featureDimension, labelDimension,
+          1000, 2);
 
-      // train the model
-      SmallLayeredNeuralNetwork ann = new SmallLayeredNeuralNetwork();
-      ann.setLearningRate(learningRate);
-      ann.setMomemtumWeight(momemtumWeight);
-      ann.setRegularizationWeight(regularizationWeight);
-      ann.addLayer(featureDimension, false,
-          FunctionFactory.createDoubleFunction("Sigmoid"));
-      ann.addLayer(featureDimension, false,
-          FunctionFactory.createDoubleFunction("Sigmoid"));
-      ann.addLayer(labelDimension, true,
-          FunctionFactory.createDoubleFunction("Sigmoid"));
-      ann.setCostFunction(FunctionFactory
-          .createDoubleDoubleFunction("CrossEntropy"));
-      ann.setModelPath(MODEL_PATH);
-
-      Map<String, String> trainingParameters = new HashMap<String, String>();
-      trainingParameters.put("tasks", "2");
-      trainingParameters.put("training.max.iterations", "" + iteration);
-      trainingParameters.put("training.batch.size", "300");
-      trainingParameters.put("convergence.check.interval", "1000");
-      ann.train(conf, sequenceTrainingDataPath, trainingParameters);
-
+      long startTime = System.currentTimeMillis();
+      if (ann.waitForCompletion(true)) {
+        LOG.info("Job Finished in "
+            + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
+      }
+      
     } catch (Exception e) {
       e.printStackTrace();
     }

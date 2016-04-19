@@ -23,13 +23,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.lang.math.RandomUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.WritableUtils;
@@ -43,6 +43,8 @@ import org.apache.hama.commons.math.DoubleFunction;
 import org.apache.hama.commons.math.DoubleMatrix;
 import org.apache.hama.commons.math.DoubleVector;
 import org.apache.hama.commons.math.FunctionFactory;
+import org.apache.hama.util.ReflectionUtils;
+import org.apache.horn.examples.MultiLayerPerceptron.StandardNeuron;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -63,7 +65,9 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
 
   private static final Log LOG = LogFactory
       .getLog(SmallLayeredNeuralNetwork.class);
-  
+
+  public static Class<Neuron<Synapse<DoubleWritable, DoubleWritable>>> neuronClass;
+
   /* Weights between neurons at adjacent layers */
   protected List<DoubleMatrix> weightMatrixList;
 
@@ -75,6 +79,8 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
 
   protected int finalLayerIdx;
 
+  protected double regularizationWeight;
+
   public SmallLayeredNeuralNetwork() {
     this.layerSizeList = Lists.newArrayList();
     this.weightMatrixList = Lists.newArrayList();
@@ -84,6 +90,7 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
 
   public SmallLayeredNeuralNetwork(HamaConfiguration conf, String modelPath) {
     super(conf, modelPath);
+    this.regularizationWeight = conf.getDouble("regularization.weight", 0);
   }
 
   @Override
@@ -147,6 +154,7 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
 
   /**
    * Set the previous weight matrices.
+   * 
    * @param prevUpdates
    */
   void setPrevWeightMatrices(DoubleMatrix[] prevUpdates) {
@@ -242,8 +250,8 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
     // write squashing functions
     output.writeInt(this.squashingFunctionList.size());
     for (DoubleFunction aSquashingFunctionList : this.squashingFunctionList) {
-      WritableUtils.writeString(output, aSquashingFunctionList
-              .getFunctionName());
+      WritableUtils.writeString(output,
+          aSquashingFunctionList.getFunctionName());
     }
 
     // write weight matrices
@@ -305,7 +313,16 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
       intermediateOutput = forward(i, intermediateOutput);
       outputCache.add(intermediateOutput);
     }
+
     return outputCache;
+  }
+
+  /**
+   * @return a new neuron instance
+   */
+  public static Neuron<Synapse<DoubleWritable, DoubleWritable>> newNeuronInstance() {
+    return (Neuron<Synapse<DoubleWritable, DoubleWritable>>) ReflectionUtils
+        .newInstance(neuronClass);
   }
 
   /**
@@ -318,8 +335,30 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
   protected DoubleVector forward(int fromLayer, DoubleVector intermediateOutput) {
     DoubleMatrix weightMatrix = this.weightMatrixList.get(fromLayer);
 
-    DoubleVector vec = weightMatrix.multiplyVectorUnsafe(intermediateOutput);
-    vec = vec.applyToElements(this.squashingFunctionList.get(fromLayer));
+    neuronClass = (Class<Neuron<Synapse<DoubleWritable, DoubleWritable>>>) conf
+        .getClass("neuron.class", Neuron.class);
+
+    // TODO use the multithread processing
+    DoubleVector vec = new DenseDoubleVector(weightMatrix.getRowCount());
+    for (int row = 0; row < weightMatrix.getRowCount(); row++) {
+      List<Synapse<DoubleWritable, DoubleWritable>> msgs = new ArrayList<Synapse<DoubleWritable, DoubleWritable>>();
+      for (int col = 0; col < weightMatrix.getColumnCount(); col++) {
+        msgs.add(new Synapse<DoubleWritable, DoubleWritable>(
+            new DoubleWritable(intermediateOutput.get(col)),
+            new DoubleWritable(weightMatrix.get(row, col))));
+      }
+      Iterable<Synapse<DoubleWritable, DoubleWritable>> iterable = msgs;
+      Neuron<Synapse<DoubleWritable, DoubleWritable>> n = newNeuronInstance();
+      n.setup(conf);
+      n.setSquashingFunction(this.squashingFunctionList.get(fromLayer));
+      try {
+        n.forward(iterable);
+      } catch (IOException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
+      vec.set(row, n.getOutput());
+    }
 
     // add bias
     DoubleVector vecWithBias = new DenseDoubleVector(vec.getDimension() + 1);
@@ -327,6 +366,7 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
     for (int i = 0; i < vec.getDimension(); ++i) {
       vecWithBias.set(i + 1, vec.get(i));
     }
+
     return vecWithBias;
   }
 
@@ -468,8 +508,6 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
       DenseDoubleMatrix weightUpdateMatrix) {
 
     // get layer related information
-    DoubleFunction squashingFunction = this.squashingFunctionList
-        .get(curLayerIdx);
     DoubleVector curLayerOutput = outputCache.get(curLayerIdx);
     DoubleMatrix weightMatrix = this.weightMatrixList.get(curLayerIdx);
     DoubleMatrix prevWeightMatrix = this.prevWeightUpdatesList.get(curLayerIdx);
@@ -480,41 +518,51 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
           nextLayerDelta.getDimension() - 1);
     }
 
-    DoubleVector delta = weightMatrix.transpose()
-        .multiplyVector(nextLayerDelta);
-    for (int i = 0; i < delta.getDimension(); ++i) {
-      delta.set(
-          i,
-          delta.get(i)
-              * squashingFunction.applyDerivative(curLayerOutput.get(i)));
-    }
+    // DoubleMatrix transposed = weightMatrix.transpose();
+    DoubleVector deltaVector = new DenseDoubleVector(
+        weightMatrix.getColumnCount());
+    for (int row = 0; row < weightMatrix.getColumnCount(); ++row) {
+      Neuron<Synapse<DoubleWritable, DoubleWritable>> n = newNeuronInstance();
+      // calls setup method
+      n.setup(conf);
+      n.setSquashingFunction(this.squashingFunctionList.get(curLayerIdx));
+      n.setOutput(curLayerOutput.get(row));
 
-    // update weights
-    for (int i = 0; i < weightUpdateMatrix.getRowCount(); ++i) {
-      for (int j = 0; j < weightUpdateMatrix.getColumnCount(); ++j) {
-        weightUpdateMatrix.set(i, j,
-            -learningRate * nextLayerDelta.get(i) * curLayerOutput.get(j)
-                + this.momentumWeight * prevWeightMatrix.get(i, j));
+      List<Synapse<DoubleWritable, DoubleWritable>> msgs = new ArrayList<Synapse<DoubleWritable, DoubleWritable>>();
+
+      n.setWeightVector(weightMatrix.getRowCount());
+
+      for (int col = 0; col < weightMatrix.getRowCount(); ++col) {
+        // sum += (transposed.get(row, col) * nextLayerDelta.get(col));
+        msgs.add(new Synapse<DoubleWritable, DoubleWritable>(
+            new DoubleWritable(nextLayerDelta.get(col)), new DoubleWritable(
+                weightMatrix.get(col, row)), new DoubleWritable(
+                prevWeightMatrix.get(col, row))));
       }
+
+      Iterable<Synapse<DoubleWritable, DoubleWritable>> iterable = msgs;
+      try {
+        n.backward(iterable);
+      } catch (IOException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
+
+      // update weights
+      weightUpdateMatrix.setColumn(row, n.getWeights());
+      deltaVector.set(row, n.getDelta());
     }
 
-    return delta;
+    return deltaVector;
   }
 
   @Override
-  protected void trainInternal(HamaConfiguration hamaConf, Path dataInputPath,
-      Map<String, String> trainingParams) throws IOException,
-      InterruptedException, ClassNotFoundException {
-    // add all training parameters to configuration
+  protected BSPJob trainInternal(HamaConfiguration hamaConf)
+      throws IOException, InterruptedException, ClassNotFoundException {
     this.conf = hamaConf;
     this.fs = FileSystem.get(conf);
-    
-    for (Map.Entry<String, String> entry : trainingParams.entrySet()) {
-      conf.set(entry.getKey(), entry.getValue());
-    }
 
-    // if training parameters contains the model path, update the model path
-    String modelPath = trainingParams.get("modelPath");
+    String modelPath = conf.get("model.path");
     if (modelPath != null) {
       this.modelPath = modelPath;
     }
@@ -524,8 +572,6 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
           "Please specify the modelPath for model, "
               + "either through setModelPath() or add 'modelPath' to the training parameters.");
     }
-
-    conf.set("modelPath", this.modelPath);
     this.writeModelToFile();
 
     // create job
@@ -533,7 +579,11 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
     job.setJobName("Small scale Neural Network training");
     job.setJarByClass(SmallLayeredNeuralNetworkTrainer.class);
     job.setBspClass(SmallLayeredNeuralNetworkTrainer.class);
-    job.setInputPath(dataInputPath);
+
+    job.getConfiguration().setClass("neuron.class", StandardNeuron.class,
+        Neuron.class);
+
+    job.setInputPath(new Path(conf.get("training.input.path")));
     job.setInputFormat(org.apache.hama.bsp.SequenceFileInputFormat.class);
     job.setInputKeyClass(LongWritable.class);
     job.setInputValueClass(VectorWritable.class);
@@ -541,15 +591,7 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
     job.setOutputValueClass(NullWritable.class);
     job.setOutputFormat(org.apache.hama.bsp.NullOutputFormat.class);
 
-    int numTasks = conf.getInt("tasks", 1);
-    LOG.info(String.format("Number of tasks: %d\n", numTasks));
-    job.setNumBspTask(numTasks);
-    job.waitForCompletion(true);
-
-    // reload learned model
-    LOG.info(String.format("Reload model from %s.", this.modelPath));
-    this.readFromModel();
-
+    return job;
   }
 
   @Override

@@ -15,37 +15,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.horn.trainer;
+package org.apache.horn.bsp;
 
 import org.apache.hadoop.io.Writable;
-import org.apache.horn.funcs.Sigmoid;
+import org.apache.hama.commons.math.DoubleFunction;
 
 public abstract class Neuron<M extends Writable> implements NeuronInterface<M> {
   double output;
   double weight;
-
-  /**
-   * @return the theta value of this neuron.
-   */
-  public double getTheta() {
-    // TODO Auto-generated method stub
-    return 0;
-  }
+  double delta;
+  protected DoubleFunction squashingFunction;
 
   public void feedforward(double sum) {
     // TODO Auto-generated method stub
     // squashing
+    this.output = sum;
   }
 
   public void backpropagate(double gradient) {
     // TODO Auto-generated method stub
-
+    this.delta = gradient;
   }
 
-  public double activation(double sum) {
-    // TODO Auto-generated method stub
-    this.output = new Sigmoid().apply(sum);
-    return output;
+  public double getDelta() {
+    return delta;
+  }
+
+  public void setWeight(double weight) {
+    this.weight = weight;
   }
 
   public void setOutput(double output) {
@@ -57,18 +54,29 @@ public abstract class Neuron<M extends Writable> implements NeuronInterface<M> {
   }
 
   // ////////* Below methods will communicate with parameter server */
-
-  public double getPreviousWeight() {
-    return weight;
-  }
+  private int i;
 
   public void push(double weight) {
-    // TODO Auto-generated method stub
-    this.weight = weight;
+    weights[i++] = weight;
   }
 
   public double getUpdate() {
     return weight;
+  }
+
+  double[] weights;
+
+  public void setWeightVector(int rowCount) {
+    i = 0;
+    weights = new double[rowCount];
+  }
+
+  public double[] getWeights() {
+    return weights;
+  }
+
+  public void setSquashingFunction(DoubleFunction squashingFunction) {
+    this.squashingFunction = squashingFunction;
   }
 
 }

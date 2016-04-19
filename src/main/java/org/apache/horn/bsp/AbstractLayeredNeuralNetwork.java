@@ -45,13 +45,9 @@ import com.google.common.collect.Lists;
  */
 abstract class AbstractLayeredNeuralNetwork extends NeuralNetwork {
 
-  private static final double DEFAULT_REGULARIZATION_WEIGHT = 0;
   private static final double DEFAULT_MOMENTUM_WEIGHT = 0.1;
 
   double trainingError;
-
-  /* The weight of regularization */
-  protected double regularizationWeight;
 
   /* The momentumWeight */
   protected double momentumWeight;
@@ -76,7 +72,6 @@ abstract class AbstractLayeredNeuralNetwork extends NeuralNetwork {
   }
   
   public AbstractLayeredNeuralNetwork() {
-    this.regularizationWeight = DEFAULT_REGULARIZATION_WEIGHT;
     this.momentumWeight = DEFAULT_MOMENTUM_WEIGHT;
     this.trainingMethod = TrainingMethod.GRADIENT_DESCENT;
     this.learningStyle = LearningStyle.SUPERVISED;
@@ -84,38 +79,6 @@ abstract class AbstractLayeredNeuralNetwork extends NeuralNetwork {
 
   public AbstractLayeredNeuralNetwork(HamaConfiguration conf, String modelPath) {
     super(conf, modelPath);
-  }
-
-  /**
-   * Set the regularization weight. Recommend in the range [0, 0.1), More
-   * complex the model is, less weight the regularization is.
-   * 
-   * @param regularizationWeight
-   */
-  public void setRegularizationWeight(double regularizationWeight) {
-    Preconditions.checkArgument(regularizationWeight >= 0
-        && regularizationWeight < 1.0,
-        "Regularization weight must be in range [0, 1.0)");
-    this.regularizationWeight = regularizationWeight;
-  }
-
-  public double getRegularizationWeight() {
-    return this.regularizationWeight;
-  }
-
-  /**
-   * Set the momemtum weight for the model. Recommend in range [0, 0.5].
-   * 
-   * @param momentumWeight
-   */
-  public void setMomemtumWeight(double momentumWeight) {
-    Preconditions.checkArgument(momentumWeight >= 0 && momentumWeight <= 1.0,
-        "Momentum weight must be in range [0, 1.0]");
-    this.momentumWeight = momentumWeight;
-  }
-
-  public double getMomemtumWeight() {
-    return this.momentumWeight;
   }
 
   public void setTrainingMethod(TrainingMethod method) {
@@ -218,8 +181,6 @@ abstract class AbstractLayeredNeuralNetwork extends NeuralNetwork {
   @Override
   public void readFields(DataInput input) throws IOException {
     super.readFields(input);
-    // read regularization weight
-    this.regularizationWeight = input.readDouble();
     // read momentum weight
     this.momentumWeight = input.readDouble();
 
@@ -241,8 +202,6 @@ abstract class AbstractLayeredNeuralNetwork extends NeuralNetwork {
   @Override
   public void write(DataOutput output) throws IOException {
     super.write(output);
-    // write regularization weight
-    output.writeDouble(this.regularizationWeight);
     // write momentum weight
     output.writeDouble(this.momentumWeight);
 

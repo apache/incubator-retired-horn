@@ -17,10 +17,12 @@
  */
 package org.apache.horn.bsp;
 
+import java.io.IOException;
 import java.util.Map;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.bsp.BSPJob;
 import org.apache.hama.commons.math.DenseDoubleVector;
 import org.apache.hama.commons.math.DoubleFunction;
 import org.apache.hama.commons.math.DoubleMatrix;
@@ -66,21 +68,6 @@ public class AutoEncoder {
     model = new SmallLayeredNeuralNetwork(conf, modelPath);
   }
 
-  public AutoEncoder setLearningRate(double learningRate) {
-    model.setLearningRate(learningRate);
-    return this;
-  }
-
-  public AutoEncoder setMomemtumWeight(double momentumWeight) {
-    model.setMomemtumWeight(momentumWeight);
-    return this;
-  }
-
-  public AutoEncoder setRegularizationWeight(double regularizationWeight) {
-    model.setRegularizationWeight(regularizationWeight);
-    return this;
-  }
-
   public AutoEncoder setModelPath(String modelPath) {
     model.setModelPath(modelPath);
     return this;
@@ -92,10 +79,13 @@ public class AutoEncoder {
    * 
    * @param dataInputPath
    * @param trainingParams
+   * @throws InterruptedException 
+   * @throws IOException 
+   * @throws ClassNotFoundException 
    */
-  public void train(HamaConfiguration conf, Path dataInputPath,
-      Map<String, String> trainingParams) {
-    model.train(conf, dataInputPath, trainingParams);
+  public BSPJob train(HamaConfiguration conf, Path dataInputPath,
+      Map<String, String> trainingParams) throws ClassNotFoundException, IOException, InterruptedException {
+    return model.train(conf);
   }
 
   /**

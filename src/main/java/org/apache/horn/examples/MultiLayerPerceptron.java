@@ -19,92 +19,99 @@ package org.apache.horn.examples;
 
 import java.io.IOException;
 
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.bsp.TextInputFormat;
 import org.apache.horn.bsp.HornJob;
+import org.apache.horn.bsp.Neuron;
+import org.apache.horn.bsp.Synapse;
 import org.apache.horn.funcs.CrossEntropy;
 import org.apache.horn.funcs.Sigmoid;
-import org.apache.horn.trainer.Neuron;
-import org.apache.horn.trainer.PropMessage;
 
 public class MultiLayerPerceptron {
 
   public static class StandardNeuron extends
-      Neuron<PropMessage<DoubleWritable, DoubleWritable>> {
-
+      Neuron<Synapse<DoubleWritable, DoubleWritable>> {
     private double learningRate;
-    private double lambda;
     private double momentum;
-    private static double bias = -1;
 
     @Override
     public void setup(HamaConfiguration conf) {
-      this.learningRate = conf.getDouble("mlp.learning.rate", 0.1);
-      this.lambda = conf.getDouble("mlp.regularization.weight", 0.01);
+      this.learningRate = conf.getDouble("mlp.learning.rate", 0.5);
       this.momentum = conf.getDouble("mlp.momentum.weight", 0.2);
     }
 
     @Override
     public void forward(
-        Iterable<PropMessage<DoubleWritable, DoubleWritable>> messages)
+        Iterable<Synapse<DoubleWritable, DoubleWritable>> messages)
         throws IOException {
       double sum = 0;
-
-      for (PropMessage<DoubleWritable, DoubleWritable> m : messages) {
+      for (Synapse<DoubleWritable, DoubleWritable> m : messages) {
         sum += m.getInput() * m.getWeight();
       }
-      sum += bias * this.getTheta(); // add bias feature
-      feedforward(activation(sum));
+
+      this.feedforward(this.squashingFunction.apply(sum));
     }
 
     @Override
     public void backward(
-        Iterable<PropMessage<DoubleWritable, DoubleWritable>> messages)
+        Iterable<Synapse<DoubleWritable, DoubleWritable>> messages)
         throws IOException {
-      for (PropMessage<DoubleWritable, DoubleWritable> m : messages) {
+      for (Synapse<DoubleWritable, DoubleWritable> m : messages) {
         // Calculates error gradient for each neuron
-        double gradient = this.getOutput() * (1 - this.getOutput())
-            * m.getDelta() * m.getWeight();
-        backpropagate(gradient);
+        double gradient = this.squashingFunction.applyDerivative(this
+            .getOutput()) * (m.getDelta() * m.getWeight());
+        this.backpropagate(gradient);
 
         // Weight corrections
         double weight = -learningRate * this.getOutput() * m.getDelta()
-            + momentum * this.getPreviousWeight();
+            + momentum * m.getPrevWeight();
         this.push(weight);
       }
     }
+  }
 
+  public static HornJob createJob(HamaConfiguration conf, String modelPath,
+      String inputPath, double learningRate, double momemtumWeight,
+      double regularizationWeight, int features, int labels, int maxIteration,
+      int numOfTasks) throws IOException {
+
+    HornJob job = new HornJob(conf, MultiLayerPerceptron.class);
+    job.setTrainingSetPath(inputPath);
+    job.setModelPath(modelPath);
+
+    job.setNumBspTask(numOfTasks);
+    job.setMaxIteration(maxIteration);
+    job.setLearningRate(learningRate);
+    job.setMomentumWeight(momemtumWeight);
+    job.setRegularizationWeight(regularizationWeight);
+
+    job.setConvergenceCheckInterval(1000);
+    job.setBatchSize(300);
+
+    job.addLayer(features, Sigmoid.class);
+    job.addLayer(features, Sigmoid.class);
+    job.finalLayer(labels, Sigmoid.class);
+
+    job.setCostFunction(CrossEntropy.class);
+
+    return job;
   }
 
   public static void main(String[] args) throws IOException,
       InterruptedException, ClassNotFoundException {
-    HamaConfiguration conf = new HamaConfiguration();
-    HornJob job = new HornJob(conf, MultiLayerPerceptron.class);
-
-    job.setDouble("mlp.learning.rate", 0.1);
-    job.setDouble("mlp.regularization.weight", 0.01);
-    job.setDouble("mlp.momentum.weight", 0.2);
-
-    // initialize the topology of the model.
-    // a three-layer model is created in this example
-    job.addLayer(1000, StandardNeuron.class, Sigmoid.class); // 1st layer
-    job.addLayer(800, StandardNeuron.class, Sigmoid.class); // 2nd layer
-    job.addLayer(300, StandardNeuron.class, Sigmoid.class); // total classes
-
-    // set the cost function to evaluate the error
-    job.setCostFunction(CrossEntropy.class);
-
-    // set I/O and others
-    job.setInputFormat(TextInputFormat.class);
-    job.setOutputPath(new Path("/tmp/"));
-    job.setMaxIteration(10000);
-    job.setNumBspTask(3);
+    if (args.length < 9) {
+      System.out
+          .println("Usage: model_path training_set learning_rate momentum regularization_weight feature_dimension label_dimension max_iteration num_tasks");
+      System.exit(1);
+    }
+    HornJob ann = createJob(new HamaConfiguration(), args[0], args[1],
+        Double.parseDouble(args[2]), Double.parseDouble(args[3]),
+        Double.parseDouble(args[4]), Integer.parseInt(args[5]),
+        Integer.parseInt(args[6]), Integer.parseInt(args[7]),
+        Integer.parseInt(args[8]));
 
     long startTime = System.currentTimeMillis();
-
-    if (job.waitForCompletion(true)) {
+    if (ann.waitForCompletion(true)) {
       System.out.println("Job Finished in "
           + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
     }

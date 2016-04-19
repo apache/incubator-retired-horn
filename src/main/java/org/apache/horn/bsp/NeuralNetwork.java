@@ -22,9 +22,9 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Map;
 
 import org.apache.commons.lang.SerializationUtils;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -32,6 +32,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.bsp.BSPJob;
 import org.apache.hama.ml.util.DefaultFeatureTransformer;
 import org.apache.hama.ml.util.FeatureTransformer;
 
@@ -68,6 +69,7 @@ abstract class NeuralNetwork implements Writable {
   }
 
   public NeuralNetwork(String modelPath) {
+    this.modelPath = modelPath;
   }
 
   public NeuralNetwork(HamaConfiguration conf, String modelPath) {
@@ -83,23 +85,6 @@ abstract class NeuralNetwork implements Writable {
 
   }
 
-  /**
-   * Set the degree of aggression during model training, a large learning rate
-   * can increase the training speed, but it also decrease the chance of model
-   * converge. Recommend in range (0, 0.3).
-   * 
-   * @param learningRate
-   */
-  public void setLearningRate(double learningRate) {
-    Preconditions.checkArgument(learningRate > 0,
-        "Learning rate must be larger than 0.");
-    this.learningRate = learningRate;
-  }
-
-  public double getLearningRate() {
-    return this.learningRate;
-  }
-
   public void isLearningRateDecay(boolean decay) {
     this.learningRateDecay = decay;
   }
@@ -113,33 +98,22 @@ abstract class NeuralNetwork implements Writable {
    * 
    * @param dataInputPath The path of the training data.
    * @param trainingParams The parameters for training.
+   * @throws InterruptedException 
+   * @throws ClassNotFoundException 
    * @throws IOException
    */
-  public void train(HamaConfiguration hamaConf, Path dataInputPath, Map<String, String> trainingParams) {
+  public BSPJob train(Configuration conf) throws ClassNotFoundException, IOException, InterruptedException {
     Preconditions.checkArgument(this.modelPath != null,
         "Please set the model path before training.");
+
     // train with BSP job
-    try {
-      trainInternal(hamaConf, dataInputPath, trainingParams);
-      // write the trained model back to model path
-      this.readFromModel();
-    } catch (IOException e) {
-      e.printStackTrace();
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    } catch (ClassNotFoundException e) {
-      e.printStackTrace();
-    }
+    return trainInternal((HamaConfiguration) conf);
   }
 
   /**
    * Train the model with the path of given training data and parameters.
-   * 
-   * @param dataInputPath
-   * @param trainingParams
    */
-  protected abstract void trainInternal(HamaConfiguration hamaConf,
-      Path dataInputPath, Map<String, String> trainingParams)
+  protected abstract BSPJob trainInternal(HamaConfiguration hamaConf)
       throws IOException, InterruptedException, ClassNotFoundException;
 
   /**
@@ -163,7 +137,7 @@ abstract class NeuralNetwork implements Writable {
   public void writeModelToFile() throws IOException {
     Preconditions.checkArgument(this.modelPath != null,
         "Model path has not been set.");
-    
+
     FSDataOutputStream is = fs.create(new Path(this.modelPath), true);
     this.write(is);
 

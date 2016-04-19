@@ -1,0 +1,182 @@
+#!/usr/bin/env bash
+
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# The Horn command script
+
+bin=`dirname "$0"`
+bin=`cd "$bin"; pwd`
+
+. "$bin"/horn-config.sh
+
+cygwin=false
+case "`uname`" in
+CYGWIN*) cygwin=true;;
+esac
+
+# if no args specified, show usage
+if [ $# = 0 ]; then
+  echo "Usage: horn [--config confdir] COMMAND"
+  echo "where COMMAND is one of:"
+  echo "  jar <jar>            run a jar file"
+  echo " or"
+  echo "  CLASSNAME            run the class named CLASSNAME"
+  echo "Most commands print help when invoked w/o parameters."
+  exit 1
+fi
+
+# get arguments
+COMMAND=$1
+shift
+
+if [ -f "${HORN_CONF_DIR}/horn-env.sh" ]; then
+  . "${HORN_CONF_DIR}/horn-env.sh"
+fi
+
+# some Java parameters
+if [ "$JAVA_HOME" != "" ]; then
+  #echo "run java in $JAVA_HOME"
+  JAVA_HOME=$JAVA_HOME
+fi
+  
+if [ "$JAVA_HOME" = "" ]; then
+  echo "Error: JAVA_HOME is not set."
+  exit 1
+fi
+
+JAVA=$JAVA_HOME/bin/java
+JAVA_HEAP_MAX=-Xmx512m
+
+# check envvars which might override default args
+if [ "$HORN_HEAPSIZE" != "" ]; then
+  #echo "run with heapsize $HORN_HEAPSIZE"
+  JAVA_HEAP_MAX="-Xmx""$HORN_HEAPSIZE""m"
+  #echo $JAVA_HEAP_MAX
+fi
+
+# CLASSPATH initially contains $HORN_CONF_DIR
+CLASSPATH="${HORN_CONF_DIR}"
+CLASSPATH=${CLASSPATH}:$JAVA_HOME/lib/tools.jar
+
+# for developers, add Horn classes to CLASSPATH
+if [ -d "$HORN_HOME/core/target/classes" ]; then
+  CLASSPATH=${CLASSPATH}:$HORN_HOME/core/target/classes
+fi
+if [ -d "$HORN_HOME/core/target/test-classes/classes" ]; then
+  CLASSPATH=${CLASSPATH}:$HORN_HOME/core/target/test-classes
+fi
+
+# for developers, add Commons classes to CLASSPATH
+if [ -d "$HORN_HOME/commons/target/classes" ]; then
+  CLASSPATH=${CLASSPATH}:$HORN_HOME/commons/target/classes
+fi
+if [ -d "$HORN_HOME/commons/target/test-classes/classes" ]; then
+  CLASSPATH=${CLASSPATH}:$HORN_HOME/commons/target/test-classes
+fi
+
+# for developers, add Graph classes to CLASSPATH
+if [ -d "$HORN_HOME/graph/target/classes" ]; then
+  CLASSPATH=${CLASSPATH}:$HORN_HOME/graph/target/classes
+fi
+if [ -d "$HORN_HOME/graph/target/test-classes/classes" ]; then
+  CLASSPATH=${CLASSPATH}:$HORN_HOME/graph/target/test-classes
+fi
+
+# for developers, add ML classes to CLASSPATH
+if [ -d "$HORN_HOME/ml/target/classes" ]; then
+  CLASSPATH=${CLASSPATH}:$HORN_HOME/ml/target/classes
+fi
+if [ -d "$HORN_HOME/ml/target/test-classes/classes" ]; then
+  CLASSPATH=${CLASSPATH}:$HORN_HOME/ml/target/test-classes
+fi
+
+# add mesos classes to CLASSPATH
+if [ -d "$HORN_HOME/mesos/target/classes" ]; then
+  CLASSPATH=${CLASSPATH}:$HORN_HOME/mesos/target/classes
+fi
+if [ -d "$HORN_HOME/mesos/target/test-classes/classes" ]; then
+  CLASSPATH=${CLASSPATH}:$HORN_HOME/mesos/target/test-classes
+fi
+
+# so that filenames w/ spaces are handled correctly in loops below
+IFS=
+
+# for releases, add core hama jar to CLASSPATH
+for f in $HORN_HOME/hama-**.jar; do
+  CLASSPATH=${CLASSPATH}:$f;
+done
+
+# add libs to CLASSPATH
+for f in $HORN_HOME/lib/*.jar; do
+  CLASSPATH=${CLASSPATH}:$f;
+done
+
+# add user-specified CLASSPATH last
+if [ "$HORN_CLASSPATH" != "" ]; then
+  CLASSPATH=${CLASSPATH}:${HORN_CLASSPATH}
+fi
+
+# default log directory & file
+if [ "$HORN_LOG_DIR" = "" ]; then
+  HORN_LOG_DIR="$HORN_HOME/logs"
+fi
+if [ "$HAMA_LOGFILE" = "" ]; then
+  HAMA_LOGFILE='hama.log'
+fi
+
+# default policy file for service-level authorization
+if [ "$HAMA_POLICYFILE" = "" ]; then
+  HAMA_POLICYFILE="hama-policy.xml"
+fi
+
+# restore ordinary behaviour
+unset IFS
+
+# figure out which class to run
+if [ "$COMMAND" = "jar" ] ; then
+  CLASS=org.apache.hama.util.RunJar
+  BSP_OPTS="$BSP_OPTS"
+else
+  CLASS=$COMMAND
+fi
+
+# cygwin path translation
+if $cygwin; then
+  CLASSPATH=`cygpath -p -w "$CLASSPATH"`
+  HORN_HOME=`cygpath -w "$HORN_HOME"`
+  HORN_LOG_DIR=`cygpath -w "$HORN_LOG_DIR"`
+  TOOL_PATH=`cygpath -p -w "$TOOL_PATH"`
+fi
+
+# cygwin path translation
+if $cygwin; then
+  JAVA_LIBRARY_PATH=`cygpath -p "$JAVA_LIBRARY_PATH"`
+fi
+
+HAMA_OPTS="$HAMA_OPTS -Dhama.log.dir=$HORN_LOG_DIR"
+HAMA_OPTS="$HAMA_OPTS -Dhama.log.file=$HAMA_LOGFILE"
+HAMA_OPTS="$HAMA_OPTS -Dhama.home.dir=$HORN_HOME"
+HAMA_OPTS="$HAMA_OPTS -Dhama.id.str=$HAMA_IDENT_STRING"
+HAMA_OPTS="$HAMA_OPTS -Dhama.root.logger=${HAMA_ROOT_LOGGER:-INFO,console}"
+
+if [ "x$JAVA_LIBRARY_PATH" != "x" ]; then
+  HAMA_OPTS="$HAMA_OPTS -Djava.library.path=$JAVA_LIBRARY_PATH"
+fi
+HAMA_OPTS="$HAMA_OPTS -Dhama.policy.file=$HAMA_POLICYFILE"
+
+# run it
+exec "$JAVA" $JAVA_HEAP_MAX $HAMA_OPTS -classpath "$CLASSPATH" $CLASS "$@"
+

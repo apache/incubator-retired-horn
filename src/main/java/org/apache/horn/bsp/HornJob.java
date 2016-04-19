@@ -22,36 +22,84 @@ import java.io.IOException;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPJob;
 import org.apache.hama.commons.math.Function;
-import org.apache.horn.trainer.Neuron;
-import org.apache.horn.trainer.Trainer;
+import org.apache.hama.commons.math.FunctionFactory;
 
 public class HornJob extends BSPJob {
+
+  SmallLayeredNeuralNetwork neuralNetwork;
 
   public HornJob(HamaConfiguration conf, Class<?> exampleClass)
       throws IOException {
     super(conf);
-    this.setBspClass(Trainer.class);
     this.setJarByClass(exampleClass);
+
+    neuralNetwork = new SmallLayeredNeuralNetwork();
+  }
+
+  public void addLayer(int featureDimension, Class<? extends Function> func) {
+    neuralNetwork.addLayer(featureDimension, false,
+        FunctionFactory.createDoubleFunction(func.getSimpleName()));
+  }
+
+  public void finalLayer(int labels, Class<? extends Function> func) {
+    neuralNetwork.addLayer(labels, true,
+        FunctionFactory.createDoubleFunction(func.getSimpleName()));
+  }
+
+  public void setCostFunction(Class<? extends Function> func) {
+    neuralNetwork.setCostFunction(FunctionFactory
+        .createDoubleDoubleFunction(func.getSimpleName()));
   }
 
   public void setDouble(String name, double value) {
     conf.setDouble(name, value);
   }
 
-  @SuppressWarnings("rawtypes")
-  public void addLayer(int i, Class<? extends Neuron> class1,
-      Class<? extends Function> class2) {
-    // TODO Auto-generated method stub
-
+  public void setMaxIteration(int maxIteration) {
+    this.conf.setInt("training.max.iterations", maxIteration);
   }
 
-  public void setCostFunction(Class<? extends Function> class1) {
-    // TODO Auto-generated method stub
-
+  public void setBatchSize(int batchSize) {
+    this.conf.setInt("training.batch.size", batchSize);
   }
 
-  public void setMaxIteration(int n) {
-    this.conf.setInt("horn.max.iteration", n);
+  public void setLearningRate(double learningRate) {
+    this.conf.setDouble("mlp.learning.rate", learningRate);
+  }
+
+  public void setConvergenceCheckInterval(int n) {
+    this.conf.setInt("convergence.check.interval", n);
+  }
+
+  public void setMomentumWeight(double momentumWeight) {
+    this.conf.setDouble("mlp.momentum.weight", momentumWeight);
+  }
+
+  public SmallLayeredNeuralNetwork getNeuralNetwork() {
+    return neuralNetwork;
+  }
+
+  public boolean waitForCompletion(boolean verbose) throws IOException,
+      InterruptedException, ClassNotFoundException {
+    BSPJob job = neuralNetwork.train(this.conf);
+    if (verbose) {
+      return job.waitForCompletion(true);
+    } else {
+      return job.waitForCompletion(false);
+    }
+  }
+
+  public void setRegularizationWeight(double regularizationWeight) {
+    this.conf.setDouble("regularization.weight", regularizationWeight);
+  }
+
+  public void setModelPath(String modelPath) {
+    this.conf.set("model.path", modelPath);
+    neuralNetwork.setModelPath(modelPath);
+  }
+
+  public void setTrainingSetPath(String inputPath) {
+    this.conf.set("training.input.path", inputPath);
   }
 
 }

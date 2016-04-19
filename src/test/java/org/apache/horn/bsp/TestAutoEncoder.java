@@ -53,8 +53,10 @@ public class TestAutoEncoder extends MLTestBase {
     double[][] instances = { { 0, 0, 0, 1 }, { 0, 0, 1, 0 }, { 0, 1, 0, 0 },
         { 0, 0, 0, 0 } };
     AutoEncoder encoder = new AutoEncoder(4, 2);
-    encoder.setLearningRate(0.5);
-    encoder.setMomemtumWeight(0.2);
+    // TODO use the configuration
+
+    // encoder.setLearningRate(0.5);
+    // encoder.setMomemtumWeight(0.2);
 
     int maxIteration = 2000;
     Random rnd = new Random();
@@ -107,8 +109,8 @@ public class TestAutoEncoder extends MLTestBase {
       vecInstanceList.add(new DenseDoubleVector(instance));
     }
     AutoEncoder encoder = new AutoEncoder(3, 2);
-    encoder.setLearningRate(0.05);
-    encoder.setMomemtumWeight(0.1);
+    // encoder.setLearningRate(0.05);
+    // encoder.setMomemtumWeight(0.1);
     int maxIteration = 2000;
     for (int iteration = 0; iteration < maxIteration; ++iteration) {
       for (DoubleVector vector : vecInstanceList) {
@@ -177,11 +179,11 @@ public class TestAutoEncoder extends MLTestBase {
     String modelPath = "/tmp/autoencoder-modelpath";
     encoder.setModelPath(modelPath);
     Map<String, String> trainingParams = new HashMap<String, String>();
-    encoder.setLearningRate(0.5);
+    // encoder.setLearningRate(0.5);
     trainingParams.put("tasks", "5");
     trainingParams.put("training.max.iterations", "3000");
     trainingParams.put("training.batch.size", "200");
-    encoder.train(conf, path, trainingParams);
+    // encoder.train(conf, path, trainingParams);
 
     double errorInstance = 0;
     for (double[] instance : instanceList) {

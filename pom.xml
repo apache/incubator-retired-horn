@@ -104,7 +104,12 @@
       <version>${log4j.version}</version>
     </dependency>
     
-  
+    <dependency>
+      <groupId>org.apache.avro</groupId>
+      <artifactId>avro</artifactId>
+      <version>1.5.3</version>
+    </dependency>
+ 
     <dependency>
       <groupId>org.apache.hama</groupId>
       <artifactId>hama-commons</artifactId>

@@ -88,9 +88,9 @@ public class MultiLayerPerceptron {
     job.setConvergenceCheckInterval(1000);
     job.setBatchSize(300);
 
+    job.inputLayer(features, Sigmoid.class);
     job.addLayer(features, Sigmoid.class);
-    job.addLayer(features, Sigmoid.class);
-    job.finalLayer(labels, Sigmoid.class);
+    job.outputLayer(labels, Sigmoid.class);
 
     job.setCostFunction(CrossEntropy.class);
 

@@ -28,7 +28,7 @@ import org.apache.hama.commons.math.DoubleDoubleFunction;
 import org.apache.hama.commons.math.DoubleFunction;
 import org.apache.hama.commons.math.DoubleMatrix;
 import org.apache.hama.commons.math.DoubleVector;
-import org.apache.hama.commons.math.FunctionFactory;
+import org.apache.horn.funcs.FunctionFactory;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;

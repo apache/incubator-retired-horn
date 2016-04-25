@@ -33,6 +33,7 @@ import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.WritableUtils;
+import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPJob;
 import org.apache.hama.commons.io.MatrixWritable;
@@ -42,9 +43,9 @@ import org.apache.hama.commons.math.DenseDoubleVector;
 import org.apache.hama.commons.math.DoubleFunction;
 import org.apache.hama.commons.math.DoubleMatrix;
 import org.apache.hama.commons.math.DoubleVector;
-import org.apache.hama.commons.math.FunctionFactory;
 import org.apache.hama.util.ReflectionUtils;
 import org.apache.horn.examples.MultiLayerPerceptron.StandardNeuron;
+import org.apache.horn.funcs.FunctionFactory;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -582,6 +583,11 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
 
     job.getConfiguration().setClass("neuron.class", StandardNeuron.class,
         Neuron.class);
+
+    // additional for parameter server
+    // TODO at this moment, we use 1 task as a parameter server
+    // In the future, the number of parameter server should be configurable
+    job.getConfiguration().setInt(Constants.ADDITIONAL_BSP_TASKS, 1);
 
     job.setInputPath(new Path(conf.get("training.input.path")));
     job.setInputFormat(org.apache.hama.bsp.SequenceFileInputFormat.class);

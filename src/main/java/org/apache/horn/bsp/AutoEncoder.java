@@ -27,8 +27,8 @@ import org.apache.hama.commons.math.DenseDoubleVector;
 import org.apache.hama.commons.math.DoubleFunction;
 import org.apache.hama.commons.math.DoubleMatrix;
 import org.apache.hama.commons.math.DoubleVector;
-import org.apache.hama.commons.math.FunctionFactory;
 import org.apache.hama.ml.util.FeatureTransformer;
+import org.apache.horn.funcs.FunctionFactory;
 
 import com.google.common.base.Preconditions;
 

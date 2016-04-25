@@ -60,7 +60,6 @@ public class NeuralNetworkTest extends HamaCluster {
         conf.get("bsp.master.address"));
     conf.set("bsp.local.dir", "/tmp/hama-test");
     conf.set(Constants.ZOOKEEPER_QUORUM, "localhost");
-    conf.setBoolean(Constants.FORCE_SET_BSP_TASKS, true);
     conf.setInt(Constants.ZOOKEEPER_CLIENT_PORT, 21810);
     conf.set("hama.sync.client.class",
         org.apache.hama.bsp.sync.ZooKeeperSyncClientImpl.class

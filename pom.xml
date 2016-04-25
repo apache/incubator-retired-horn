@@ -32,8 +32,8 @@
 
   <properties>
     <commons-logging.version>1.1.1</commons-logging.version>
-    <hama.version>0.7.0</hama.version>
-    <hadoop.version>2.7.0</hadoop.version>
+    <hama.version>0.7.2-SNAPSHOT</hama.version>
+    <hadoop.version>2.7.2</hadoop.version>
     <protobuf.version>2.5.0</protobuf.version>
     <junit.version>4.8.1</junit.version>
     <log4j.version>1.2.16</log4j.version>

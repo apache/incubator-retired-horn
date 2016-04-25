@@ -44,11 +44,11 @@ import org.apache.hama.commons.math.DenseDoubleMatrix;
 import org.apache.hama.commons.math.DenseDoubleVector;
 import org.apache.hama.commons.math.DoubleMatrix;
 import org.apache.hama.commons.math.DoubleVector;
-import org.apache.hama.commons.math.FunctionFactory;
 import org.apache.hama.ml.util.DefaultFeatureTransformer;
 import org.apache.hama.ml.util.FeatureTransformer;
 import org.apache.horn.bsp.AbstractLayeredNeuralNetwork.LearningStyle;
 import org.apache.horn.bsp.AbstractLayeredNeuralNetwork.TrainingMethod;
+import org.apache.horn.funcs.FunctionFactory;
 import org.junit.Test;
 import org.mortbay.log.Log;
 
@@ -616,7 +616,6 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
     trainingParameters.put("training.batch.size", "300");
     trainingParameters.put("convergence.check.interval", "1000");
     //ann.train(new HamaConfiguration(), tmpDatasetPath, trainingParameters);
-    
 
     long end = new Date().getTime();
 

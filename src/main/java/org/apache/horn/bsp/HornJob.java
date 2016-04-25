@@ -22,7 +22,7 @@ import java.io.IOException;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPJob;
 import org.apache.hama.commons.math.Function;
-import org.apache.hama.commons.math.FunctionFactory;
+import org.apache.horn.funcs.FunctionFactory;
 
 public class HornJob extends BSPJob {
 

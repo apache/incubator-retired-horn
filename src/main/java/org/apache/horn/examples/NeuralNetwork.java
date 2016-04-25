@@ -30,8 +30,8 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.commons.math.DenseDoubleVector;
 import org.apache.hama.commons.math.DoubleVector;
-import org.apache.hama.commons.math.FunctionFactory;
 import org.apache.horn.bsp.SmallLayeredNeuralNetwork;
+import org.apache.horn.funcs.FunctionFactory;
 
 /**
  * The example of using {@link SmallLayeredNeuralNetwork}, including the

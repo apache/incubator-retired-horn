@@ -24,18 +24,20 @@ import org.apache.hama.HamaConfiguration;
 import org.apache.horn.bsp.HornJob;
 import org.apache.horn.bsp.Neuron;
 import org.apache.horn.bsp.StandardNeuron;
+import org.apache.horn.bsp.ConvNeuron;
 import org.apache.horn.bsp.Synapse;
 import org.apache.horn.funcs.CrossEntropy;
 import org.apache.horn.funcs.Sigmoid;
 
-public class MultiLayerPerceptron {
+public class ConvolutionalNeuralNetwork {
 
-  public static HornJob createJob(HamaConfiguration conf, String modelPath,
+  //possible way to pass classes is have a list of tuples to pass the neuron and squashing funciton value at the same time
+  public static CNNHornJob createJob(HamaConfiguration conf, String modelPath,
       String inputPath, double learningRate, double momemtumWeight,
       double regularizationWeight, int features, int labels, int maxIteration,
       int numOfTasks) throws IOException {
 
-    HornJob job = new HornJob(conf, MultiLayerPerceptron.class);
+    CNNHornJob job = new CNNHornJob(conf, ConvolutionalNeuralNetwork.class);
     job.setTrainingSetPath(inputPath);
     job.setModelPath(modelPath);
 
@@ -48,9 +50,10 @@ public class MultiLayerPerceptron {
     job.setConvergenceCheckInterval(1000);
     job.setBatchSize(300);
 
-    job.inputLayer(features, Sigmoid.class);
-    job.addLayer(features, Sigmoid.class);
-    job.outputLayer(labels, Sigmoid.class);
+    cnn.addLayer(150, ReLu.class, ConvNeuron.class); // convolution layer
+    ccn.addLayer(100, Sigmoid.class, StandardNeuron.class); // fully connected
+    ccn.addLayer(100, Sigmoid.class, StandardNeuron.class); // fully connected
+    ccn.outputLayer(10, Sigmoid.class, StandardNeuron.class); // fully connected
 
     job.setCostFunction(CrossEntropy.class);
 
@@ -59,6 +62,7 @@ public class MultiLayerPerceptron {
 
   public static void main(String[] args) throws IOException,
       InterruptedException, ClassNotFoundException {
+    //TODO: implement this for real
     if (args.length < 9) {
       System.out
           .println("Usage: model_path training_set learning_rate momentum regularization_weight feature_dimension label_dimension max_iteration num_tasks");

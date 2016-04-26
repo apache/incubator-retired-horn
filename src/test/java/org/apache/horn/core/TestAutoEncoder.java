@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.horn.bsp;
+package org.apache.horn.core;
 
 import static org.junit.Assert.assertEquals;
 
@@ -39,6 +39,7 @@ import org.apache.hama.HamaConfiguration;
 import org.apache.hama.commons.io.VectorWritable;
 import org.apache.hama.commons.math.DenseDoubleVector;
 import org.apache.hama.commons.math.DoubleVector;
+import org.apache.horn.core.AutoEncoder;
 import org.junit.Test;
 import org.mortbay.log.Log;
 

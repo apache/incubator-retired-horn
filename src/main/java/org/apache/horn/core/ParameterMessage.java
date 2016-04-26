@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.horn.bsp;
+package org.apache.horn.core;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -27,23 +27,22 @@ import org.apache.hama.commons.math.DenseDoubleMatrix;
 import org.apache.hama.commons.math.DoubleMatrix;
 
 /**
- * NeuralNetworkMessage transmits the messages between peers during the training
- * of neural networks.
+ * ParameterMessage transmits the messages between workers and parameter
+ * servers during the training of neural networks.
  * 
  */
-public class SmallLayeredNeuralNetworkMessage implements Writable {
+public class ParameterMessage implements Writable {
 
   protected double trainingError;
   protected DoubleMatrix[] curMatrices;
   protected DoubleMatrix[] prevMatrices;
   protected boolean converge;
 
-  public SmallLayeredNeuralNetworkMessage() {
+  public ParameterMessage() {
   }
-  
-  public SmallLayeredNeuralNetworkMessage(double trainingError,
-      boolean converge, DoubleMatrix[] weightMatrices,
-      DoubleMatrix[] prevMatrices) {
+
+  public ParameterMessage(double trainingError, boolean converge,
+      DoubleMatrix[] weightMatrices, DoubleMatrix[] prevMatrices) {
     this.trainingError = trainingError;
     this.converge = converge;
     this.curMatrices = weightMatrices;

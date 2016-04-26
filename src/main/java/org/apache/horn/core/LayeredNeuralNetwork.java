@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.horn.bsp;
+package org.apache.horn.core;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -62,10 +62,10 @@ import com.google.common.collect.Lists;
  * form a bipartite weighted graph.
  * 
  */
-public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
+public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
 
   private static final Log LOG = LogFactory
-      .getLog(SmallLayeredNeuralNetwork.class);
+      .getLog(LayeredNeuralNetwork.class);
 
   public static Class<Neuron<Synapse<DoubleWritable, DoubleWritable>>> neuronClass;
 
@@ -82,14 +82,14 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
 
   protected double regularizationWeight;
 
-  public SmallLayeredNeuralNetwork() {
+  public LayeredNeuralNetwork() {
     this.layerSizeList = Lists.newArrayList();
     this.weightMatrixList = Lists.newArrayList();
     this.prevWeightUpdatesList = Lists.newArrayList();
     this.squashingFunctionList = Lists.newArrayList();
   }
 
-  public SmallLayeredNeuralNetwork(HamaConfiguration conf, String modelPath) {
+  public LayeredNeuralNetwork(HamaConfiguration conf, String modelPath) {
     super(conf, modelPath);
     this.regularizationWeight = conf.getDouble("regularization.weight", 0);
   }
@@ -333,6 +333,7 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
    * @param intermediateOutput The intermediateOutput of previous layer.
    * @return a new vector with the result of the operation.
    */
+  @SuppressWarnings("unchecked")
   protected DoubleVector forward(int fromLayer, DoubleVector intermediateOutput) {
     DoubleMatrix weightMatrix = this.weightMatrixList.get(fromLayer);
 
@@ -576,10 +577,10 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
     this.writeModelToFile();
 
     // create job
-    BSPJob job = new BSPJob(conf, SmallLayeredNeuralNetworkTrainer.class);
+    BSPJob job = new BSPJob(conf, LayeredNeuralNetworkTrainer.class);
     job.setJobName("Small scale Neural Network training");
-    job.setJarByClass(SmallLayeredNeuralNetworkTrainer.class);
-    job.setBspClass(SmallLayeredNeuralNetworkTrainer.class);
+    job.setJarByClass(LayeredNeuralNetworkTrainer.class);
+    job.setBspClass(LayeredNeuralNetworkTrainer.class);
 
     job.getConfiguration().setClass("neuron.class", StandardNeuron.class,
         Neuron.class);

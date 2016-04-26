@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.horn.bsp;
+package org.apache.horn.core;
 
 import java.io.IOException;
 

@@ -21,9 +21,9 @@ import java.io.IOException;
 
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hama.HamaConfiguration;
-import org.apache.horn.bsp.HornJob;
-import org.apache.horn.bsp.Neuron;
-import org.apache.horn.bsp.Synapse;
+import org.apache.horn.core.HornJob;
+import org.apache.horn.core.Neuron;
+import org.apache.horn.core.Synapse;
 import org.apache.horn.funcs.CrossEntropy;
 import org.apache.horn.funcs.Sigmoid;
 
@@ -101,7 +101,7 @@ public class MultiLayerPerceptron {
       InterruptedException, ClassNotFoundException {
     if (args.length < 9) {
       System.out
-          .println("Usage: model_path training_set learning_rate momentum regularization_weight feature_dimension label_dimension max_iteration num_tasks");
+          .println("Usage: <MODEL_PATH> <INPUT_PATH> <LEARNING_RATE> <MOMEMTUM_WEIGHT> <REGULARIZATION_WEIGHT> <FEATURE_DIMENSION> <LABEL_DIMENSION> <MAX_ITERATION> <NUM_TASKS>");
       System.exit(1);
     }
     HornJob ann = createJob(new HamaConfiguration(), args[0], args[1],

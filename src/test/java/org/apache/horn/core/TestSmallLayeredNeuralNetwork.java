@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.horn.bsp;
+package org.apache.horn.core;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -46,8 +46,8 @@ import org.apache.hama.commons.math.DoubleMatrix;
 import org.apache.hama.commons.math.DoubleVector;
 import org.apache.hama.ml.util.DefaultFeatureTransformer;
 import org.apache.hama.ml.util.FeatureTransformer;
-import org.apache.horn.bsp.AbstractLayeredNeuralNetwork.LearningStyle;
-import org.apache.horn.bsp.AbstractLayeredNeuralNetwork.TrainingMethod;
+import org.apache.horn.core.AbstractLayeredNeuralNetwork.LearningStyle;
+import org.apache.horn.core.AbstractLayeredNeuralNetwork.TrainingMethod;
 import org.apache.horn.funcs.FunctionFactory;
 import org.junit.Test;
 import org.mortbay.log.Log;
@@ -60,7 +60,7 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
 
   @Test
   public void testReadWrite() {
-    SmallLayeredNeuralNetwork ann = new SmallLayeredNeuralNetwork();
+    LayeredNeuralNetwork ann = new LayeredNeuralNetwork();
     ann.addLayer(2, false,
         FunctionFactory.createDoubleFunction("IdentityFunction"));
     ann.addLayer(5, false,
@@ -96,7 +96,7 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
     }
 
     // read from file
-    SmallLayeredNeuralNetwork annCopy = new SmallLayeredNeuralNetwork(new HamaConfiguration(), modelPath);
+    LayeredNeuralNetwork annCopy = new LayeredNeuralNetwork(new HamaConfiguration(), modelPath);
     assertEquals(annCopy.getClass().getSimpleName(), annCopy.getModelType());
     assertEquals(modelPath, annCopy.getModelPath());
     // assertEquals(learningRate, annCopy.getLearningRate(), 0.000001);
@@ -128,7 +128,7 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
    */
   public void testOutput() {
     // first network
-    SmallLayeredNeuralNetwork ann = new SmallLayeredNeuralNetwork();
+    LayeredNeuralNetwork ann = new LayeredNeuralNetwork();
     ann.addLayer(2, false,
         FunctionFactory.createDoubleFunction("IdentityFunction"));
     ann.addLayer(5, false,
@@ -151,7 +151,7 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
     // assertEquals(3, result.get(0), 0.000001);
 
     // second network
-    SmallLayeredNeuralNetwork ann2 = new SmallLayeredNeuralNetwork();
+    LayeredNeuralNetwork ann2 = new LayeredNeuralNetwork();
     ann2.addLayer(2, false, FunctionFactory.createDoubleFunction("Sigmoid"));
     ann2.addLayer(3, false, FunctionFactory.createDoubleFunction("Sigmoid"));
     ann2.addLayer(1, true, FunctionFactory.createDoubleFunction("Sigmoid"));
@@ -170,7 +170,7 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
     DoubleVector vec = ann2.getOutput(new DenseDoubleVector(test));
     assertArrayEquals(result2, vec.toArray(), 0.000001);
 
-    SmallLayeredNeuralNetwork ann3 = new SmallLayeredNeuralNetwork();
+    LayeredNeuralNetwork ann3 = new LayeredNeuralNetwork();
     ann3.addLayer(2, false, FunctionFactory.createDoubleFunction("Sigmoid"));
     ann3.addLayer(3, false, FunctionFactory.createDoubleFunction("Sigmoid"));
     ann3.addLayer(1, true, FunctionFactory.createDoubleFunction("Sigmoid"));
@@ -190,7 +190,7 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
 
   @Test
   public void testXORlocal() {
-    SmallLayeredNeuralNetwork ann = new SmallLayeredNeuralNetwork();
+    LayeredNeuralNetwork ann = new LayeredNeuralNetwork();
     ann.addLayer(2, false, FunctionFactory.createDoubleFunction("Sigmoid"));
     ann.addLayer(3, false, FunctionFactory.createDoubleFunction("Sigmoid"));
     ann.addLayer(1, true, FunctionFactory.createDoubleFunction("Sigmoid"));
@@ -228,7 +228,7 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
     } catch (IOException e) {
       e.printStackTrace();
     }
-    SmallLayeredNeuralNetwork annCopy = new SmallLayeredNeuralNetwork(new HamaConfiguration(), modelPath);
+    LayeredNeuralNetwork annCopy = new LayeredNeuralNetwork(new HamaConfiguration(), modelPath);
     // test on instances
     for (int i = 0; i < instances.length; ++i) {
       DoubleVector input = new DenseDoubleVector(instances[i]).slice(2);
@@ -243,7 +243,7 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
 
   @Test
   public void testXORWithMomentum() {
-    SmallLayeredNeuralNetwork ann = new SmallLayeredNeuralNetwork();
+    LayeredNeuralNetwork ann = new LayeredNeuralNetwork();
     ann.addLayer(2, false, FunctionFactory.createDoubleFunction("Sigmoid"));
     ann.addLayer(3, false, FunctionFactory.createDoubleFunction("Sigmoid"));
     ann.addLayer(1, true, FunctionFactory.createDoubleFunction("Sigmoid"));
@@ -278,7 +278,7 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
     } catch (IOException e) {
       e.printStackTrace();
     }
-    SmallLayeredNeuralNetwork annCopy = new SmallLayeredNeuralNetwork(new HamaConfiguration(), modelPath);
+    LayeredNeuralNetwork annCopy = new LayeredNeuralNetwork(new HamaConfiguration(), modelPath);
     // test on instances
     for (int i = 0; i < instances.length; ++i) {
       DoubleVector input = new DenseDoubleVector(instances[i]).slice(2);
@@ -293,7 +293,7 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
 
   @Test
   public void testXORLocalWithRegularization() {
-    SmallLayeredNeuralNetwork ann = new SmallLayeredNeuralNetwork();
+    LayeredNeuralNetwork ann = new LayeredNeuralNetwork();
     ann.addLayer(2, false, FunctionFactory.createDoubleFunction("Sigmoid"));
     ann.addLayer(3, false, FunctionFactory.createDoubleFunction("Sigmoid"));
     ann.addLayer(1, true, FunctionFactory.createDoubleFunction("Sigmoid"));
@@ -329,7 +329,7 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
     } catch (IOException e) {
       e.printStackTrace();
     }
-    SmallLayeredNeuralNetwork annCopy = new SmallLayeredNeuralNetwork(new HamaConfiguration(), modelPath);
+    LayeredNeuralNetwork annCopy = new LayeredNeuralNetwork(new HamaConfiguration(), modelPath);
     // test on instances
     for (int i = 0; i < instances.length; ++i) {
       DoubleVector input = new DenseDoubleVector(instances[i]).slice(2);
@@ -377,7 +377,7 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
     List<double[]> trainingInstances = instanceList.subList(0,
         instanceList.size() - 100);
 
-    SmallLayeredNeuralNetwork ann = new SmallLayeredNeuralNetwork();
+    LayeredNeuralNetwork ann = new LayeredNeuralNetwork();
     // ann.setLearningRate(0.001);
     // ann.setMomemtumWeight(0.1);
     //ann.setRegularizationWeight(0.01);
@@ -485,7 +485,7 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
 
     // create model
     int dimension = 8;
-    SmallLayeredNeuralNetwork ann = new SmallLayeredNeuralNetwork();
+    LayeredNeuralNetwork ann = new LayeredNeuralNetwork();
     // ann.setLearningRate(0.7);
     // ann.setMomemtumWeight(0.5);
     //ann.setRegularizationWeight(0.1);
@@ -590,7 +590,7 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
 
     // create model
     int dimension = 8;
-    SmallLayeredNeuralNetwork ann = new SmallLayeredNeuralNetwork();
+    LayeredNeuralNetwork ann = new LayeredNeuralNetwork();
     // ann.setLearningRate(0.7);
     // ann.setMomemtumWeight(0.5);
     //ann.setRegularizationWeight(0.1);

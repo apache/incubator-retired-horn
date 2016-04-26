@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.horn.bsp;
+package org.apache.horn.core;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -31,7 +31,7 @@ public class ParameterMergerServer implements ParameterMerger {
   private static final Log LOG = LogFactory.getLog(ParameterMergerServer.class);
 
   /* The parameter merge base. */
-  protected SmallLayeredNeuralNetwork inMemoryModel;
+  protected LayeredNeuralNetwork inMemoryModel;
 
   /* To terminate or not to terminate. */
   protected AtomicBoolean isConverge;
@@ -60,7 +60,7 @@ public class ParameterMergerServer implements ParameterMerger {
   /* how many merges have been conducted? */
   protected int mergeCount = 0;
 
-  public ParameterMergerServer(SmallLayeredNeuralNetwork inMemoryModel,
+  public ParameterMergerServer(LayeredNeuralNetwork inMemoryModel,
       AtomicBoolean isConverge, int slaveCount, int mergeLimit,
       int convergenceCheckInterval) {
     this.inMemoryModel = inMemoryModel;
@@ -76,8 +76,8 @@ public class ParameterMergerServer implements ParameterMerger {
   }
 
   @Override
-  public SmallLayeredNeuralNetworkMessage merge(
-      SmallLayeredNeuralNetworkMessage msg) {
+  public ParameterMessage merge(
+      ParameterMessage msg) {
 
     double trainingError = msg.getTrainingError();
     DoubleMatrix[] weightUpdates = msg.getCurMatrices();
@@ -124,7 +124,7 @@ public class ParameterMergerServer implements ParameterMerger {
       }
     }
 
-    return new SmallLayeredNeuralNetworkMessage(0, this.isConverge.get(),
+    return new ParameterMessage(0, this.isConverge.get(),
         this.inMemoryModel.getWeightMatrices(),
         this.inMemoryModel.getPrevMatricesUpdates());
   }

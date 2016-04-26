@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.horn.bsp;
+package org.apache.horn.core;
 
 import java.io.IOException;
 
@@ -26,14 +26,14 @@ import org.apache.horn.funcs.FunctionFactory;
 
 public class HornJob extends BSPJob {
 
-  SmallLayeredNeuralNetwork neuralNetwork;
+  LayeredNeuralNetwork neuralNetwork;
 
   public HornJob(HamaConfiguration conf, Class<?> exampleClass)
       throws IOException {
     super(conf);
     this.setJarByClass(exampleClass);
 
-    neuralNetwork = new SmallLayeredNeuralNetwork();
+    neuralNetwork = new LayeredNeuralNetwork();
   }
 
   public void inputLayer(int featureDimension, Class<? extends Function> func) {
@@ -79,7 +79,7 @@ public class HornJob extends BSPJob {
     this.conf.setDouble("mlp.momentum.weight", momentumWeight);
   }
 
-  public SmallLayeredNeuralNetwork getNeuralNetwork() {
+  public LayeredNeuralNetwork getNeuralNetwork() {
     return neuralNetwork;
   }
 

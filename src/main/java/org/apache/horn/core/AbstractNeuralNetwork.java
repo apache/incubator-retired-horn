@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.horn.bsp;
+package org.apache.horn.core;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -46,7 +46,7 @@ import com.google.common.io.Closeables;
  * between neurons.
  * 
  */
-abstract class NeuralNetwork implements Writable {
+public abstract class AbstractNeuralNetwork implements Writable {
   protected HamaConfiguration conf;
   protected FileSystem fs;
 
@@ -62,17 +62,17 @@ abstract class NeuralNetwork implements Writable {
 
   protected FeatureTransformer featureTransformer;
 
-  public NeuralNetwork() {
+  public AbstractNeuralNetwork() {
     this.learningRate = DEFAULT_LEARNING_RATE;
     this.modelType = this.getClass().getSimpleName();
     this.featureTransformer = new DefaultFeatureTransformer();
   }
 
-  public NeuralNetwork(String modelPath) {
+  public AbstractNeuralNetwork(String modelPath) {
     this.modelPath = modelPath;
   }
 
-  public NeuralNetwork(HamaConfiguration conf, String modelPath) {
+  public AbstractNeuralNetwork(HamaConfiguration conf, String modelPath) {
     try {
       this.conf = conf;
       this.fs = FileSystem.get(conf);

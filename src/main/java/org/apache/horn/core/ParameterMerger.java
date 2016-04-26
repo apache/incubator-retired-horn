@@ -15,13 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.horn.bsp;
+package org.apache.horn.core;
 
 import org.apache.hama.ipc.VersionedProtocol;
 
 public interface ParameterMerger extends VersionedProtocol {
   long versionID = 1L;
 
-  SmallLayeredNeuralNetworkMessage merge(SmallLayeredNeuralNetworkMessage msg);
+  ParameterMessage merge(ParameterMessage msg);
 
 }

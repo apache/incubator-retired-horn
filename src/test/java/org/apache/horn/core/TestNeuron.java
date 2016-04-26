@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.horn.trainer;
+package org.apache.horn.core;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -25,8 +25,8 @@ import junit.framework.TestCase;
 
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hama.HamaConfiguration;
-import org.apache.horn.bsp.Neuron;
-import org.apache.horn.bsp.Synapse;
+import org.apache.horn.core.Neuron;
+import org.apache.horn.core.Synapse;
 import org.apache.horn.funcs.Sigmoid;
 
 public class TestNeuron extends TestCase {

@@ -18,14 +18,10 @@
 package org.apache.horn.examples;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -37,21 +33,20 @@ import org.apache.hama.HamaConfiguration;
 import org.apache.hama.commons.io.VectorWritable;
 import org.apache.hama.commons.math.DenseDoubleVector;
 import org.apache.hama.commons.math.DoubleVector;
-import org.apache.horn.bsp.HornJob;
-import org.apache.horn.bsp.SmallLayeredNeuralNetwork;
+import org.apache.horn.core.HornJob;
+import org.apache.horn.core.LayeredNeuralNetwork;
 
 /**
  * Test the functionality of NeuralNetwork Example.
- * 
  */
-public class NeuralNetworkTest extends HamaCluster {
+public class MultiLayerPerceptronTest extends HamaCluster {
   private HamaConfiguration conf;
   private FileSystem fs;
   private String MODEL_PATH = "/tmp/neuralnets.model";
   private String RESULT_PATH = "/tmp/neuralnets.txt";
   private String SEQTRAIN_DATA = "/tmp/test-neuralnets.data";
 
-  public NeuralNetworkTest() {
+  public MultiLayerPerceptronTest() {
     conf = new HamaConfiguration();
     conf.set("bsp.master.address", "localhost");
     conf.setBoolean("hama.child.redirect.log.console", true);
@@ -82,22 +77,23 @@ public class NeuralNetworkTest extends HamaCluster {
 
     String featureDataPath = "src/test/resources/neuralnets_classification_test.txt";
     try {
-      SmallLayeredNeuralNetwork ann = new SmallLayeredNeuralNetwork(conf,
+      LayeredNeuralNetwork ann = new LayeredNeuralNetwork(conf,
           MODEL_PATH);
 
       // process data in streaming approach
       FileSystem fs = FileSystem.get(new URI(featureDataPath), conf);
       BufferedReader br = new BufferedReader(new InputStreamReader(
           fs.open(new Path(featureDataPath))));
-      Path outputPath = new Path(RESULT_PATH);
-      if (fs.exists(outputPath)) {
-        fs.delete(outputPath, true);
-      }
-      BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(
-          fs.create(outputPath)));
 
       String line = null;
+      line = null;
 
+      // compare results with ground-truth
+      BufferedReader groundTruthReader = new BufferedReader(new FileReader(
+          "src/test/resources/neuralnets_classification_label.txt"));
+
+      double correct = 0;
+      int samples = 0;
       while ((line = br.readLine()) != null) {
         if (line.trim().length() == 0) {
           continue;
@@ -109,52 +105,21 @@ public class NeuralNetworkTest extends HamaCluster {
         }
         DoubleVector instance = new DenseDoubleVector(vals);
         DoubleVector result = ann.getOutput(instance);
-        double[] arrResult = result.toArray();
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < arrResult.length; ++i) {
-          sb.append(arrResult[i]);
-          if (i != arrResult.length - 1) {
-            sb.append(",");
-          } else {
-            sb.append("\n");
-          }
-        }
-        bw.write(sb.toString());
-      }
+        double actual = result.toArray()[0];
+        double expected = Double.parseDouble(groundTruthReader.readLine());
 
-      br.close();
-      bw.close();
-
-      // compare results with ground-truth
-      BufferedReader groundTruthReader = new BufferedReader(new FileReader(
-          "src/test/resources/neuralnets_classification_label.txt"));
-      List<Double> groundTruthList = new ArrayList<Double>();
-      line = null;
-      while ((line = groundTruthReader.readLine()) != null) {
-        groundTruthList.add(Double.parseDouble(line));
-      }
-      groundTruthReader.close();
-
-      BufferedReader resultReader = new BufferedReader(new FileReader(
-          RESULT_PATH));
-      List<Double> resultList = new ArrayList<Double>();
-      while ((line = resultReader.readLine()) != null) {
-        resultList.add(Double.parseDouble(line));
-      }
-      resultReader.close();
-      int total = resultList.size();
-      double correct = 0;
-      for (int i = 0; i < groundTruthList.size(); ++i) {
-        double actual = resultList.get(i);
-        double expected = groundTruthList.get(i);
         LOG.info("evaluated: " + actual + ", expected: " + expected);
         if (actual < 0.5 && expected < 0.5 || actual >= 0.5 && expected >= 0.5) {
           ++correct;
         }
+        samples++;
       }
 
-      LOG.info("## Precision: " + (correct / total));
-      assertTrue((correct / total) > 0.5);
+      groundTruthReader.close();
+      br.close();
+
+      LOG.info("## Precision: " + (correct / samples));
+      assertTrue((correct / samples) > 0.5);
 
     } catch (Exception e) {
       e.printStackTrace();
@@ -201,10 +166,10 @@ public class NeuralNetworkTest extends HamaCluster {
 
       long startTime = System.currentTimeMillis();
       if (ann.waitForCompletion(true)) {
-        LOG.info("Job Finished in "
-            + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
+        LOG.info("Job Finished in " + (System.currentTimeMillis() - startTime)
+            / 1000.0 + " seconds");
       }
-      
+
     } catch (Exception e) {
       e.printStackTrace();
     }

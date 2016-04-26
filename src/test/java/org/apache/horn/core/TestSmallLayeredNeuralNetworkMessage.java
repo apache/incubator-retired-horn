@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.horn.bsp;
+package org.apache.horn.core;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -34,6 +34,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hama.commons.math.DenseDoubleMatrix;
 import org.apache.hama.commons.math.DoubleMatrix;
+import org.apache.horn.core.ParameterMessage;
 import org.junit.Test;
 
 /**
@@ -54,7 +55,7 @@ public class TestSmallLayeredNeuralNetworkMessage {
 
     boolean isConverge = false;
 
-    SmallLayeredNeuralNetworkMessage message = new SmallLayeredNeuralNetworkMessage(
+    ParameterMessage message = new ParameterMessage(
         error, isConverge, matrices, null);
     Configuration conf = new Configuration();
     String strPath = "/tmp/testReadWriteSmallLayeredNeuralNetworkMessage";
@@ -66,7 +67,7 @@ public class TestSmallLayeredNeuralNetworkMessage {
       out.close();
 
       FSDataInputStream in = fs.open(path);
-      SmallLayeredNeuralNetworkMessage readMessage = new SmallLayeredNeuralNetworkMessage(
+      ParameterMessage readMessage = new ParameterMessage(
           0, isConverge, null, null);
       readMessage.readFields(in);
       in.close();
@@ -117,7 +118,7 @@ public class TestSmallLayeredNeuralNetworkMessage {
     prevMatrices[0] = new DenseDoubleMatrix(prevMatrix1);
     prevMatrices[1] = new DenseDoubleMatrix(prevMatrix2);
 
-    SmallLayeredNeuralNetworkMessage message = new SmallLayeredNeuralNetworkMessage(
+    ParameterMessage message = new ParameterMessage(
         error, isConverge, matrices, prevMatrices);
     Configuration conf = new Configuration();
     String strPath = "/tmp/testReadWriteSmallLayeredNeuralNetworkMessageWithPrev";
@@ -129,7 +130,7 @@ public class TestSmallLayeredNeuralNetworkMessage {
       out.close();
 
       FSDataInputStream in = fs.open(path);
-      SmallLayeredNeuralNetworkMessage readMessage = new SmallLayeredNeuralNetworkMessage(
+      ParameterMessage readMessage = new ParameterMessage(
           0, isConverge, null, null);
       readMessage.readFields(in);
       in.close();

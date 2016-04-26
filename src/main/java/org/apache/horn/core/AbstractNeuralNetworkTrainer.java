@@ -15,13 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.horn.bsp;
+package org.apache.horn.core;
 
 import java.io.IOException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hama.bsp.BSP;
@@ -32,27 +33,28 @@ import org.apache.hama.ml.util.DefaultFeatureTransformer;
 import org.apache.hama.ml.util.FeatureTransformer;
 
 /**
- * The trainer that is used to train the {@link SmallLayeredNeuralNetwork} with
+ * The trainer that is used to train the {@link LayeredNeuralNetwork} with
  * BSP. The trainer would read the training data and obtain the trained
  * parameters of the model.
  * 
  */
-public abstract class NeuralNetworkTrainer extends
-    BSP<LongWritable, VectorWritable, NullWritable, NullWritable, Synapse> {
+public abstract class AbstractNeuralNetworkTrainer
+    extends
+    BSP<LongWritable, VectorWritable, NullWritable, NullWritable, Synapse<DoubleWritable, DoubleWritable>> {
 
   protected static final Log LOG = LogFactory
-      .getLog(NeuralNetworkTrainer.class);
+      .getLog(AbstractNeuralNetworkTrainer.class);
 
   protected Configuration conf;
   protected int maxIteration;
   protected int batchSize;
   protected String trainingMode;
-  
+
   protected FeatureTransformer featureTransformer;
-  
+
   @Override
   final public void setup(
-      BSPPeer<LongWritable, VectorWritable, NullWritable, NullWritable, Synapse> peer)
+      BSPPeer<LongWritable, VectorWritable, NullWritable, NullWritable, Synapse<DoubleWritable, DoubleWritable>> peer)
       throws IOException, SyncException, InterruptedException {
     conf = peer.getConfiguration();
     featureTransformer = new DefaultFeatureTransformer();
@@ -68,7 +70,7 @@ public abstract class NeuralNetworkTrainer extends
    * @throws InterruptedException
    */
   protected void extraSetup(
-      BSPPeer<LongWritable, VectorWritable, NullWritable, NullWritable, Synapse> peer)
+      BSPPeer<LongWritable, VectorWritable, NullWritable, NullWritable, Synapse<DoubleWritable, DoubleWritable>> peer)
       throws IOException, SyncException, InterruptedException {
 
   }
@@ -78,12 +80,12 @@ public abstract class NeuralNetworkTrainer extends
    */
   @Override
   public abstract void bsp(
-      BSPPeer<LongWritable, VectorWritable, NullWritable, NullWritable, Synapse> peer)
+      BSPPeer<LongWritable, VectorWritable, NullWritable, NullWritable, Synapse<DoubleWritable, DoubleWritable>> peer)
       throws IOException, SyncException, InterruptedException;
 
   @Override
   public void cleanup(
-      BSPPeer<LongWritable, VectorWritable, NullWritable, NullWritable, Synapse> peer)
+      BSPPeer<LongWritable, VectorWritable, NullWritable, NullWritable, Synapse<DoubleWritable, DoubleWritable>> peer)
       throws IOException {
     this.extraCleanup(peer);
     // write model to modelPath
@@ -98,7 +100,7 @@ public abstract class NeuralNetworkTrainer extends
    * @throws InterruptedException
    */
   protected void extraCleanup(
-      BSPPeer<LongWritable, VectorWritable, NullWritable, NullWritable, Synapse> peer)
+      BSPPeer<LongWritable, VectorWritable, NullWritable, NullWritable, Synapse<DoubleWritable, DoubleWritable>> peer)
       throws IOException {
 
   }

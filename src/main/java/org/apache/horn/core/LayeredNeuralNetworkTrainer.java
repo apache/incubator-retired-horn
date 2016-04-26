@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.horn.bsp;
+package org.apache.horn.core;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -38,20 +38,20 @@ import org.apache.hama.ipc.RPC;
 import com.google.common.base.Preconditions;
 
 /**
- * The trainer that train the {@link SmallLayeredNeuralNetwork} based on BSP
+ * The trainer that train the {@link LayeredNeuralNetwork} based on BSP
  * framework.
  * 
  */
-public final class SmallLayeredNeuralNetworkTrainer
+public final class LayeredNeuralNetworkTrainer
     extends
-    BSP<LongWritable, VectorWritable, NullWritable, NullWritable, SmallLayeredNeuralNetworkMessage> {
+    BSP<LongWritable, VectorWritable, NullWritable, NullWritable, ParameterMessage> {
 
   private static final Log LOG = LogFactory
-      .getLog(SmallLayeredNeuralNetworkTrainer.class);
+      .getLog(LayeredNeuralNetworkTrainer.class);
 
   /* When given peer is master worker: base of parameter merge */
   /* When given peer is slave worker: neural network for training */
-  private SmallLayeredNeuralNetwork inMemoryModel;
+  private LayeredNeuralNetwork inMemoryModel;
 
   /* Job configuration */
   private HamaConfiguration conf;
@@ -76,7 +76,7 @@ public final class SmallLayeredNeuralNetworkTrainer
    * @param peer
    * */
   private boolean isMaster(
-      BSPPeer<LongWritable, VectorWritable, NullWritable, NullWritable, SmallLayeredNeuralNetworkMessage> peer) {
+      BSPPeer<LongWritable, VectorWritable, NullWritable, NullWritable, ParameterMessage> peer) {
     return peer.getPeerIndex() == peer.getNumPeers() - 1;
   }
 
@@ -85,13 +85,13 @@ public final class SmallLayeredNeuralNetworkTrainer
    * If the model path is specified, load the existing from storage location.
    */
   public void setup(
-      BSPPeer<LongWritable, VectorWritable, NullWritable, NullWritable, SmallLayeredNeuralNetworkMessage> peer) {
+      BSPPeer<LongWritable, VectorWritable, NullWritable, NullWritable, ParameterMessage> peer) {
     // At least one master & slave worker exist.
     Preconditions.checkArgument(peer.getNumPeers() >= 2);
     this.conf = peer.getConfiguration();
 
     String modelPath = conf.get("model.path");
-    this.inMemoryModel = new SmallLayeredNeuralNetwork(conf, modelPath);
+    this.inMemoryModel = new LayeredNeuralNetwork(conf, modelPath);
 
     this.batchSize = conf.getInt("training.batch.size", 50);
     this.isConverge = new AtomicBoolean(false);
@@ -130,7 +130,7 @@ public final class SmallLayeredNeuralNetworkTrainer
    * Write the trained model back to stored location.
    */
   public void cleanup(
-      BSPPeer<LongWritable, VectorWritable, NullWritable, NullWritable, SmallLayeredNeuralNetworkMessage> peer) {
+      BSPPeer<LongWritable, VectorWritable, NullWritable, NullWritable, ParameterMessage> peer) {
     // write model to modelPath
     if (isMaster(peer)) {
       try {
@@ -144,7 +144,7 @@ public final class SmallLayeredNeuralNetworkTrainer
 
   @Override
   public void bsp(
-      BSPPeer<LongWritable, VectorWritable, NullWritable, NullWritable, SmallLayeredNeuralNetworkMessage> peer)
+      BSPPeer<LongWritable, VectorWritable, NullWritable, NullWritable, ParameterMessage> peer)
       throws IOException, SyncException, InterruptedException {
     while (!this.isConverge.get()) {
       // each slave-worker calculate the matrices updates according to local
@@ -168,7 +168,7 @@ public final class SmallLayeredNeuralNetworkTrainer
    * @throws IOException
    */
   private void calculateUpdates(
-      BSPPeer<LongWritable, VectorWritable, NullWritable, NullWritable, SmallLayeredNeuralNetworkMessage> peer)
+      BSPPeer<LongWritable, VectorWritable, NullWritable, NullWritable, ParameterMessage> peer)
       throws IOException {
 
     DoubleMatrix[] weightUpdates = new DoubleMatrix[this.inMemoryModel.weightMatrixList
@@ -189,7 +189,7 @@ public final class SmallLayeredNeuralNetworkTrainer
         peer.readNext(key, value);
       }
       DoubleVector trainingInstance = value.getVector();
-      SmallLayeredNeuralNetwork.matricesAdd(weightUpdates,
+      LayeredNeuralNetwork.matricesAdd(weightUpdates,
           this.inMemoryModel.trainByInstance(trainingInstance));
       avgTrainingError += this.inMemoryModel.trainingError;
     }
@@ -201,11 +201,11 @@ public final class SmallLayeredNeuralNetworkTrainer
     }
 
     // exchange parameter update with master
-    SmallLayeredNeuralNetworkMessage msg = new SmallLayeredNeuralNetworkMessage(
+    ParameterMessage msg = new ParameterMessage(
         avgTrainingError, false, weightUpdates,
         this.inMemoryModel.getPrevMatricesUpdates());
 
-    SmallLayeredNeuralNetworkMessage inMessage = proxy.merge(msg);
+    ParameterMessage inMessage = proxy.merge(msg);
     DoubleMatrix[] newWeights = inMessage.getCurMatrices();
     DoubleMatrix[] preWeightUpdates = inMessage.getPrevMatrices();
     this.inMemoryModel.setWeightMatrices(newWeights);

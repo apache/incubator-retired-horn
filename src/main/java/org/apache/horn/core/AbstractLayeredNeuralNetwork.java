@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.horn.bsp;
+package org.apache.horn.core;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -43,7 +43,7 @@ import com.google.common.collect.Lists;
  * form a bipartite weighted graph.
  * 
  */
-abstract class AbstractLayeredNeuralNetwork extends NeuralNetwork {
+abstract class AbstractLayeredNeuralNetwork extends AbstractNeuralNetwork {
 
   private static final double DEFAULT_MOMENTUM_WEIGHT = 0.1;
 

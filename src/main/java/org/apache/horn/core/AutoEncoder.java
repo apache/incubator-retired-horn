@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.horn.bsp;
+package org.apache.horn.core;
 
 import java.io.IOException;
 import java.util.Map;
@@ -34,14 +34,14 @@ import com.google.common.base.Preconditions;
 
 /**
  * AutoEncoder is a model used for dimensional reduction and feature learning.
- * It is a special kind of {@link NeuralNetwork} that consists of three layers
+ * It is a special kind of {@link AbstractNeuralNetwork} that consists of three layers
  * of neurons, where the first layer and third layer contains the same number of
  * neurons.
  * 
  */
 public class AutoEncoder {
 
-  private final SmallLayeredNeuralNetwork model;
+  private final LayeredNeuralNetwork model;
 
   /**
    * Initialize the autoencoder.
@@ -51,7 +51,7 @@ public class AutoEncoder {
    *          information.
    */
   public AutoEncoder(int inputDimensions, int compressedDimensions) {
-    model = new SmallLayeredNeuralNetwork();
+    model = new LayeredNeuralNetwork();
     model.addLayer(inputDimensions, false,
         FunctionFactory.createDoubleFunction("Sigmoid"));
     model.addLayer(compressedDimensions, false,
@@ -65,7 +65,7 @@ public class AutoEncoder {
   }
 
   public AutoEncoder(HamaConfiguration conf, String modelPath) {
-    model = new SmallLayeredNeuralNetwork(conf, modelPath);
+    model = new LayeredNeuralNetwork(conf, modelPath);
   }
 
   public AutoEncoder setModelPath(String modelPath) {

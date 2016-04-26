@@ -24,22 +24,15 @@ import java.util.List;
 import junit.framework.TestCase;
 
 import org.apache.hadoop.io.DoubleWritable;
-import org.apache.hama.HamaConfiguration;
-import org.apache.horn.core.Neuron;
-import org.apache.horn.core.Synapse;
 import org.apache.horn.funcs.Sigmoid;
 
 public class TestNeuron extends TestCase {
-  private static double learningRate = 0.1;
+  private static double learningrate = 0.1;
   private static double bias = -1;
   private static double theta = 0.8;
 
   public static class MyNeuron extends
       Neuron<Synapse<DoubleWritable, DoubleWritable>> {
-
-    @Override
-    public void setup(HamaConfiguration conf) {
-    }
 
     @Override
     public void forward(
@@ -59,14 +52,16 @@ public class TestNeuron extends TestCase {
         throws IOException {
       for (Synapse<DoubleWritable, DoubleWritable> m : messages) {
         // Calculates error gradient for each neuron
-        double gradient = new Sigmoid().applyDerivative(this.getOutput()) * (m.getDelta() * m.getWeight());
+        double gradient = new Sigmoid().applyDerivative(this.getOutput())
+            * (m.getDelta() * m.getWeight());
 
         // Propagates to lower layer
         backpropagate(gradient);
 
         // Weight corrections
-        double weight = learningRate * this.getOutput() * m.getDelta();
-        this.push(weight);
+        double weight = learningrate * this.getOutput() * m.getDelta();
+        assertEquals(-0.006688234848481696, weight);
+        // this.push(weight);
       }
     }
 
@@ -74,10 +69,10 @@ public class TestNeuron extends TestCase {
 
   public void testProp() throws IOException {
     List<Synapse<DoubleWritable, DoubleWritable>> x = new ArrayList<Synapse<DoubleWritable, DoubleWritable>>();
-    x.add(new Synapse<DoubleWritable, DoubleWritable>(new DoubleWritable(
-        1.0), new DoubleWritable(0.5)));
-    x.add(new Synapse<DoubleWritable, DoubleWritable>(new DoubleWritable(
-        1.0), new DoubleWritable(0.4)));
+    x.add(new Synapse<DoubleWritable, DoubleWritable>(new DoubleWritable(1.0),
+        new DoubleWritable(0.5)));
+    x.add(new Synapse<DoubleWritable, DoubleWritable>(new DoubleWritable(1.0),
+        new DoubleWritable(0.4)));
 
     MyNeuron n = new MyNeuron();
     n.forward(x);
@@ -87,7 +82,6 @@ public class TestNeuron extends TestCase {
     x.add(new Synapse<DoubleWritable, DoubleWritable>(new DoubleWritable(
         -0.1274), new DoubleWritable(-1.2)));
     n.backward(x);
-    assertEquals(-0.006688234848481696, n.getUpdate());
   }
 
 }

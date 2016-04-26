@@ -68,6 +68,7 @@ public class MNISTConverter {
     HamaConfiguration conf = new HamaConfiguration();
     FileSystem fs = FileSystem.get(conf);
 
+    @SuppressWarnings("deprecation")
     SequenceFile.Writer writer = new SequenceFile.Writer(fs, conf, new Path(
         output), LongWritable.class, VectorWritable.class);
 
@@ -81,6 +82,8 @@ public class MNISTConverter {
           new DenseDoubleVector(vals)));
     }
     
+    imagesIn.close();
+    labelsIn.close();
     writer.close();
   }
 }

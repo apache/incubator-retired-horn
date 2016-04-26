@@ -53,11 +53,11 @@ public class AutoEncoder {
   public AutoEncoder(int inputDimensions, int compressedDimensions) {
     model = new LayeredNeuralNetwork();
     model.addLayer(inputDimensions, false,
-        FunctionFactory.createDoubleFunction("Sigmoid"));
+        FunctionFactory.createDoubleFunction("Sigmoid"), null);
     model.addLayer(compressedDimensions, false,
-        FunctionFactory.createDoubleFunction("Sigmoid"));
+        FunctionFactory.createDoubleFunction("Sigmoid"), null);
     model.addLayer(inputDimensions, true,
-        FunctionFactory.createDoubleFunction("Sigmoid"));
+        FunctionFactory.createDoubleFunction("Sigmoid"), null);
     model
         .setLearningStyle(AbstractLayeredNeuralNetwork.LearningStyle.UNSUPERVISED);
     model.setCostFunction(FunctionFactory

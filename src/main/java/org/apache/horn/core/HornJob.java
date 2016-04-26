@@ -36,18 +36,28 @@ public class HornJob extends BSPJob {
     neuralNetwork = new LayeredNeuralNetwork();
   }
 
-  public void inputLayer(int featureDimension, Class<? extends Function> func) {
-    addLayer(featureDimension, func);
-  }
-  
-  public void addLayer(int featureDimension, Class<? extends Function> func) {
-    neuralNetwork.addLayer(featureDimension, false,
-        FunctionFactory.createDoubleFunction(func.getSimpleName()));
+  @SuppressWarnings("rawtypes")
+  public void inputLayer(int featureDimension, Class<? extends Function> func,
+      Class<? extends Neuron> neuronClass) {
+    addLayer(featureDimension, func, neuronClass);
   }
 
-  public void outputLayer(int labels, Class<? extends Function> func) {
-    neuralNetwork.addLayer(labels, true,
-        FunctionFactory.createDoubleFunction(func.getSimpleName()));
+  @SuppressWarnings("rawtypes")
+  public void addLayer(int featureDimension, Class<? extends Function> func,
+      Class<? extends Neuron> neuronClass) {
+    neuralNetwork
+        .addLayer(featureDimension, false,
+            FunctionFactory.createDoubleFunction(func.getSimpleName()),
+            neuronClass);
+  }
+
+  @SuppressWarnings("rawtypes")
+  public void outputLayer(int labels, Class<? extends Function> func,
+      Class<? extends Neuron> neuronClass) {
+    neuralNetwork
+        .addLayer(labels, true,
+            FunctionFactory.createDoubleFunction(func.getSimpleName()),
+            neuronClass);
   }
 
   public void setCostFunction(Class<? extends Function> func) {

@@ -64,10 +64,7 @@ import com.google.common.collect.Lists;
  */
 public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
 
-  private static final Log LOG = LogFactory
-      .getLog(LayeredNeuralNetwork.class);
-
-  public static Class<Neuron<Synapse<DoubleWritable, DoubleWritable>>> neuronClass;
+  private static final Log LOG = LogFactory.getLog(LayeredNeuralNetwork.class);
 
   /* Weights between neurons at adjacent layers */
   protected List<DoubleMatrix> weightMatrixList;
@@ -78,6 +75,8 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
   /* Different layers can have different squashing function */
   protected List<DoubleFunction> squashingFunctionList;
 
+  protected List<Class<? extends Neuron>> neuronClassList;
+
   protected int finalLayerIdx;
 
   protected double regularizationWeight;
@@ -87,6 +86,7 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
     this.weightMatrixList = Lists.newArrayList();
     this.prevWeightUpdatesList = Lists.newArrayList();
     this.squashingFunctionList = Lists.newArrayList();
+    this.neuronClassList = Lists.newArrayList();
   }
 
   public LayeredNeuralNetwork(HamaConfiguration conf, String modelPath) {
@@ -99,7 +99,7 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
    * {@inheritDoc}
    */
   public int addLayer(int size, boolean isFinalLayer,
-      DoubleFunction squashingFunction) {
+      DoubleFunction squashingFunction, Class<? extends Neuron> neuronClass) {
     Preconditions.checkArgument(size > 0,
         "Size of layer must be larger than 0.");
     if (!isFinalLayer) {
@@ -137,6 +137,7 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
       this.weightMatrixList.add(weightMatrix);
       this.prevWeightUpdatesList.add(new DenseDoubleMatrix(row, col));
       this.squashingFunctionList.add(squashingFunction);
+      this.neuronClassList.add(neuronClass);
     }
     return layerIdx;
   }
@@ -223,6 +224,20 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
   public void readFields(DataInput input) throws IOException {
     super.readFields(input);
 
+    // read neuron classes
+    int neuronClasses = input.readInt();
+    this.neuronClassList = Lists.newArrayList();
+    for (int i = 0; i < neuronClasses; ++i) {
+      try {
+        Class<? extends Neuron> clazz = (Class<? extends Neuron>) Class
+            .forName(input.readUTF());
+        neuronClassList.add(clazz);
+      } catch (ClassNotFoundException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
+    }
+
     // read squash functions
     int squashingFunctionSize = input.readInt();
     this.squashingFunctionList = Lists.newArrayList();
@@ -247,6 +262,12 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
   @Override
   public void write(DataOutput output) throws IOException {
     super.write(output);
+
+    // write neuron classes
+    output.writeInt(this.neuronClassList.size());
+    for (Class<? extends Neuron> clazz : this.neuronClassList) {
+      output.writeUTF(clazz.getName());
+    }
 
     // write squashing functions
     output.writeInt(this.squashingFunctionList.size());
@@ -319,9 +340,12 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
   }
 
   /**
+   * @param neuronClass
    * @return a new neuron instance
    */
-  public static Neuron<Synapse<DoubleWritable, DoubleWritable>> newNeuronInstance() {
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  public static Neuron<Synapse<DoubleWritable, DoubleWritable>> newNeuronInstance(
+      Class<? extends Neuron> neuronClass) {
     return (Neuron<Synapse<DoubleWritable, DoubleWritable>>) ReflectionUtils
         .newInstance(neuronClass);
   }
@@ -333,12 +357,8 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
    * @param intermediateOutput The intermediateOutput of previous layer.
    * @return a new vector with the result of the operation.
    */
-  @SuppressWarnings("unchecked")
   protected DoubleVector forward(int fromLayer, DoubleVector intermediateOutput) {
     DoubleMatrix weightMatrix = this.weightMatrixList.get(fromLayer);
-
-    neuronClass = (Class<Neuron<Synapse<DoubleWritable, DoubleWritable>>>) conf
-        .getClass("neuron.class", Neuron.class);
 
     // TODO use the multithread processing
     DoubleVector vec = new DenseDoubleVector(weightMatrix.getRowCount());
@@ -350,8 +370,8 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
             new DoubleWritable(weightMatrix.get(row, col))));
       }
       Iterable<Synapse<DoubleWritable, DoubleWritable>> iterable = msgs;
-      Neuron<Synapse<DoubleWritable, DoubleWritable>> n = newNeuronInstance();
-      n.setup(conf);
+      Neuron<Synapse<DoubleWritable, DoubleWritable>> n = newNeuronInstance(this.neuronClassList
+          .get(fromLayer));
       n.setSquashingFunction(this.squashingFunctionList.get(fromLayer));
       try {
         n.forward(iterable);
@@ -524,9 +544,12 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
     DoubleVector deltaVector = new DenseDoubleVector(
         weightMatrix.getColumnCount());
     for (int row = 0; row < weightMatrix.getColumnCount(); ++row) {
-      Neuron<Synapse<DoubleWritable, DoubleWritable>> n = newNeuronInstance();
+      Neuron<Synapse<DoubleWritable, DoubleWritable>> n = newNeuronInstance(this.neuronClassList
+          .get(curLayerIdx));
       // calls setup method
-      n.setup(conf);
+      n.setLearningRate(this.learningRate);
+      n.setMomentumWeight(this.momentumWeight);
+
       n.setSquashingFunction(this.squashingFunctionList.get(curLayerIdx));
       n.setOutput(curLayerOutput.get(row));
 
@@ -578,12 +601,9 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
 
     // create job
     BSPJob job = new BSPJob(conf, LayeredNeuralNetworkTrainer.class);
-    job.setJobName("Small scale Neural Network training");
+    job.setJobName("Neural Network training");
     job.setJarByClass(LayeredNeuralNetworkTrainer.class);
     job.setBspClass(LayeredNeuralNetworkTrainer.class);
-
-    job.getConfiguration().setClass("neuron.class", StandardNeuron.class,
-        Neuron.class);
 
     // additional for parameter server
     // TODO at this moment, we use 1 task as a parameter server

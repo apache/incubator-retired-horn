@@ -31,14 +31,6 @@ public class MultiLayerPerceptron {
 
   public static class StandardNeuron extends
       Neuron<Synapse<DoubleWritable, DoubleWritable>> {
-    private double learningRate;
-    private double momentum;
-
-    @Override
-    public void setup(HamaConfiguration conf) {
-      this.learningRate = conf.getDouble("mlp.learning.rate", 0.5);
-      this.momentum = conf.getDouble("mlp.momentum.weight", 0.2);
-    }
 
     @Override
     public void forward(
@@ -63,8 +55,8 @@ public class MultiLayerPerceptron {
         this.backpropagate(gradient);
 
         // Weight corrections
-        double weight = -learningRate * this.getOutput() * m.getDelta()
-            + momentum * m.getPrevWeight();
+        double weight = -this.getLearningRate() * this.getOutput()
+            * m.getDelta() + this.getMomentumWeight() * m.getPrevWeight();
         this.push(weight);
       }
     }
@@ -88,9 +80,9 @@ public class MultiLayerPerceptron {
     job.setConvergenceCheckInterval(1000);
     job.setBatchSize(300);
 
-    job.inputLayer(features, Sigmoid.class);
-    job.addLayer(features, Sigmoid.class);
-    job.outputLayer(labels, Sigmoid.class);
+    job.inputLayer(features, Sigmoid.class, StandardNeuron.class);
+    job.addLayer(features, Sigmoid.class, StandardNeuron.class);
+    job.outputLayer(labels, Sigmoid.class, StandardNeuron.class);
 
     job.setCostFunction(CrossEntropy.class);
 
@@ -101,9 +93,12 @@ public class MultiLayerPerceptron {
       InterruptedException, ClassNotFoundException {
     if (args.length < 9) {
       System.out
-          .println("Usage: <MODEL_PATH> <INPUT_PATH> <LEARNING_RATE> <MOMEMTUM_WEIGHT> <REGULARIZATION_WEIGHT> <FEATURE_DIMENSION> <LABEL_DIMENSION> <MAX_ITERATION> <NUM_TASKS>");
+          .println("Usage: <MODEL_PATH> <INPUT_PATH> "
+              + "<LEARNING_RATE> <MOMEMTUM_WEIGHT> <REGULARIZATION_WEIGHT> "
+              + "<FEATURE_DIMENSION> <LABEL_DIMENSION> <MAX_ITERATION> <NUM_TASKS>");
       System.exit(1);
     }
+
     HornJob ann = createJob(new HamaConfiguration(), args[0], args[1],
         Double.parseDouble(args[2]), Double.parseDouble(args[3]),
         Double.parseDouble(args[4]), Integer.parseInt(args[5]),

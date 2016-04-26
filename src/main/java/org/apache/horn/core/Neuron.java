@@ -17,23 +17,28 @@
  */
 package org.apache.horn.core;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.commons.math.DoubleFunction;
 
-public abstract class Neuron<M extends Writable> implements NeuronInterface<M> {
+public abstract class Neuron<M extends Writable> implements Writable, NeuronInterface<M> {
   double output;
   double weight;
   double delta;
+
+  double momentumWeight;
+  double learningRate;
+
   protected DoubleFunction squashingFunction;
 
   public void feedforward(double sum) {
-    // TODO Auto-generated method stub
-    // squashing
     this.output = sum;
   }
 
   public void backpropagate(double gradient) {
-    // TODO Auto-generated method stub
     this.delta = gradient;
   }
 
@@ -53,7 +58,24 @@ public abstract class Neuron<M extends Writable> implements NeuronInterface<M> {
     return output;
   }
 
-  // ////////* Below methods will communicate with parameter server */
+  public void setMomentumWeight(double momentumWeight) {
+    this.momentumWeight = momentumWeight;
+  }
+
+  public double getMomentumWeight() {
+    return momentumWeight;
+  }
+
+  public void setLearningRate(double learningRate) {
+    this.learningRate = learningRate;
+  }
+
+  public double getLearningRate() {
+    return learningRate;
+  }
+
+  // ////////
+
   private int i;
 
   public void push(double weight) {
@@ -77,6 +99,26 @@ public abstract class Neuron<M extends Writable> implements NeuronInterface<M> {
 
   public void setSquashingFunction(DoubleFunction squashingFunction) {
     this.squashingFunction = squashingFunction;
+  }
+
+  @Override
+  public void readFields(DataInput in) throws IOException {
+    output = in.readDouble();
+    weight = in.readDouble();
+    delta = in.readDouble();
+
+    momentumWeight = in.readDouble();
+    learningRate = in.readDouble();
+  }
+
+  @Override
+  public void write(DataOutput out) throws IOException {
+    out.writeDouble(output);
+    out.writeDouble(weight);
+    out.writeDouble(delta);
+    
+    out.writeDouble(momentumWeight);
+    out.writeDouble(learningRate);
   }
 
 }

@@ -114,8 +114,8 @@ fi
 # so that filenames w/ spaces are handled correctly in loops below
 IFS=
 
-# for releases, add core hama jar to CLASSPATH
-for f in $HORN_HOME/hama-**.jar; do
+# for releases, add core horn jar to CLASSPATH
+for f in $HORN_HOME/horn-**.jar; do
   CLASSPATH=${CLASSPATH}:$f;
 done
 
@@ -133,13 +133,13 @@ fi
 if [ "$HORN_LOG_DIR" = "" ]; then
   HORN_LOG_DIR="$HORN_HOME/logs"
 fi
-if [ "$HAMA_LOGFILE" = "" ]; then
-  HAMA_LOGFILE='hama.log'
+if [ "$HORN_LOGFILE" = "" ]; then
+  HORN_LOGFILE='horn.log'
 fi
 
 # default policy file for service-level authorization
-if [ "$HAMA_POLICYFILE" = "" ]; then
-  HAMA_POLICYFILE="hama-policy.xml"
+if [ "$HORN_POLICYFILE" = "" ]; then
+  HORN_POLICYFILE="horn-policy.xml"
 fi
 
 # restore ordinary behaviour
@@ -166,17 +166,17 @@ if $cygwin; then
   JAVA_LIBRARY_PATH=`cygpath -p "$JAVA_LIBRARY_PATH"`
 fi
 
-HAMA_OPTS="$HAMA_OPTS -Dhama.log.dir=$HORN_LOG_DIR"
-HAMA_OPTS="$HAMA_OPTS -Dhama.log.file=$HAMA_LOGFILE"
-HAMA_OPTS="$HAMA_OPTS -Dhama.home.dir=$HORN_HOME"
-HAMA_OPTS="$HAMA_OPTS -Dhama.id.str=$HAMA_IDENT_STRING"
-HAMA_OPTS="$HAMA_OPTS -Dhama.root.logger=${HAMA_ROOT_LOGGER:-INFO,console}"
+HORN_OPTS="$HORN_OPTS -Dhorn.log.dir=$HORN_LOG_DIR"
+HORN_OPTS="$HORN_OPTS -Dhorn.log.file=$HORN_LOGFILE"
+HORN_OPTS="$HORN_OPTS -Dhorn.home.dir=$HORN_HOME"
+HORN_OPTS="$HORN_OPTS -Dhorn.id.str=$HORN_IDENT_STRING"
+HORN_OPTS="$HORN_OPTS -Dhorn.root.logger=${HORN_ROOT_LOGGER:-INFO,console}"
 
 if [ "x$JAVA_LIBRARY_PATH" != "x" ]; then
-  HAMA_OPTS="$HAMA_OPTS -Djava.library.path=$JAVA_LIBRARY_PATH"
+  HORN_OPTS="$HORN_OPTS -Djava.library.path=$JAVA_LIBRARY_PATH"
 fi
-HAMA_OPTS="$HAMA_OPTS -Dhama.policy.file=$HAMA_POLICYFILE"
+HORN_OPTS="$HORN_OPTS -Dhorn.policy.file=$HORN_POLICYFILE"
 
 # run it
-exec "$JAVA" $JAVA_HEAP_MAX $HAMA_OPTS -classpath "$CLASSPATH" $CLASS "$@"
+exec "$JAVA" $JAVA_HEAP_MAX $HORN_OPTS -classpath "$CLASSPATH" $CLASS "$@"
 

@@ -102,13 +102,13 @@ public final class LayeredNeuralNetworkTrainer
         * conf.getInt("convergence.check.interval", 2000);
     String master = peer.getPeerName();
     String masterAddr = master.substring(0, master.indexOf(':'));
-    int port = conf.getInt("sync.server.port", 40052);
+    int port = conf.getInt("sync.server.port", 40089);
 
     if (isMaster(peer)) {
       try {
         this.merger = RPC.getServer(new ParameterMergerServer(inMemoryModel,
             isConverge, slaveCount, mergeLimit, convergenceCheckInterval),
-            masterAddr, port, conf);
+            masterAddr, port, slaveCount, false, conf);
         merger.start();
       } catch (IOException e) {
         e.printStackTrace();
@@ -154,7 +154,7 @@ public final class LayeredNeuralNetworkTrainer
         calculateUpdates(peer);
       }
     }
-
+    peer.sync();
     if (isMaster(peer)) {
       merger.stop();
     }

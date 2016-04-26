@@ -30,8 +30,8 @@ Then, we measure the margin of error of the output and adjust the weights accord
         this.backpropagate(gradient);
 
         // Weight corrections
-        double weight = -learningRate * this.getOutput() * m.getDelta()
-            + momentum * m.getPrevWeight();
+        double weight = -this.getLearningRate() * this.getOutput()
+            * m.getDelta() + this.getMomentumWeight() * m.getPrevWeight();
         this.push(weight);
       }
     }

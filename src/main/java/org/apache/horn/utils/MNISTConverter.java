@@ -34,12 +34,13 @@ public class MNISTConverter {
   private static int PIXELS = 28 * 28;
 
   public static void main(String[] args) throws Exception {
-    if(args.length < 3) {
+    if (args.length < 3) {
       System.out.println("Usage: TRAINING_DATA LABELS_DATA OUTPUT_PATH");
-      System.out.println("ex) train-images.idx3-ubyte train-labels.idx1-ubyte /tmp/mnist.seq");
+      System.out
+          .println("ex) train-images.idx3-ubyte train-labels.idx1-ubyte /tmp/mnist.seq");
       System.exit(1);
     }
-    
+
     String training_data = args[0];
     String labels_data = args[1];
     String output = args[2];
@@ -73,15 +74,22 @@ public class MNISTConverter {
         output), LongWritable.class, VectorWritable.class);
 
     for (int i = 0; i < count; i++) {
-      double[] vals = new double[PIXELS + 1];
+      double[] vals = new double[PIXELS + 10];
       for (int j = 0; j < PIXELS; j++) {
         vals[j] = (images[i][j] & 0xff);
       }
-      vals[PIXELS] = (labels[i] & 0xff);
+      int label = (labels[i] & 0xff);
+      for (int j = 0; j < 10; j++) {
+        if (j == label)
+          vals[PIXELS + j] = 1;
+        else
+          vals[PIXELS + j] = 0;
+      }
+
       writer.append(new LongWritable(), new VectorWritable(
           new DenseDoubleVector(vals)));
     }
-    
+
     imagesIn.close();
     labelsIn.close();
     writer.close();

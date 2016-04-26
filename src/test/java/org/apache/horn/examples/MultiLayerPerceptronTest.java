@@ -126,7 +126,7 @@ public class MultiLayerPerceptronTest extends HamaCluster {
     } finally {
       fs.delete(new Path(RESULT_PATH), true);
       fs.delete(new Path(MODEL_PATH), true);
-      fs.delete(new Path(SEQTRAIN_DATA), true);
+      //fs.delete(new Path(SEQTRAIN_DATA), true);
     }
   }
 

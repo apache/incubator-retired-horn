@@ -44,7 +44,6 @@ import org.apache.hama.commons.math.DoubleFunction;
 import org.apache.hama.commons.math.DoubleMatrix;
 import org.apache.hama.commons.math.DoubleVector;
 import org.apache.hama.util.ReflectionUtils;
-import org.apache.horn.examples.MultiLayerPerceptron.StandardNeuron;
 import org.apache.horn.funcs.FunctionFactory;
 
 import com.google.common.base.Preconditions;
@@ -106,9 +105,19 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
       size += 1;
     }
 
-    LOG.info("Add Layer: " + size);
     this.layerSizeList.add(size);
     int layerIdx = this.layerSizeList.size() - 1;
+    
+    if(layerIdx == 0) {
+      LOG.info("Input Layer: " + (size - 1) + " features");
+    } else {
+      if(!isFinalLayer) {
+        LOG.info("Hidden Layer: " + (size - 1) + " neurons with 1 bias");
+      } else {
+        LOG.info("Output Layer: " + size);
+      }
+    }
+    
     if (isFinalLayer) {
       this.finalLayerIdx = layerIdx;
     }

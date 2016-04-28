@@ -32,27 +32,21 @@ public class CrossEntropy extends DoubleDoubleFunction {
   @Override
   public double apply(double target, double actual) {
     double adjustedTarget = (target == 0 ? 0.000001 : target);
-    adjustedTarget = (target == 1.0 ? 0.999999 : target);
+    adjustedTarget = (target == 1.0 ? 0.999999 : adjustedTarget);
     double adjustedActual = (actual == 0 ? 0.000001 : actual);
-    adjustedActual = (actual == 1 ? 0.999999 : actual);
+    adjustedActual = (actual == 1 ? 0.999999 : adjustedActual);
+    
     return -adjustedTarget * Math.log(adjustedActual) - (1 - adjustedTarget)
         * Math.log(1 - adjustedActual);
   }
 
   @Override
   public double applyDerivative(double target, double actual) {
-    double adjustedTarget = target;
-    double adjustedActual = actual;
-    if (adjustedActual == 1) {
-      adjustedActual = 0.999;
-    } else if (actual == 0) {
-      adjustedActual = 0.001;
-    }
-    if (adjustedTarget == 1) {
-      adjustedTarget = 0.999;
-    } else if (adjustedTarget == 0) {
-      adjustedTarget = 0.001;
-    }
+    double adjustedTarget = (target == 0 ? 0.000001 : target);
+    adjustedTarget = (target == 1.0 ? 0.999999 : adjustedTarget);
+    double adjustedActual = (actual == 0 ? 0.000001 : actual);
+    adjustedActual = (actual == 1 ? 0.999999 : adjustedActual);
+    
     return -adjustedTarget / adjustedActual + (1 - adjustedTarget)
         / (1 - adjustedActual);
   }

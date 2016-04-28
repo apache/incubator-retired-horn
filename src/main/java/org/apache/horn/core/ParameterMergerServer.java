@@ -89,15 +89,15 @@ public class ParameterMergerServer implements ParameterMerger {
     LOG.info("Start merging: " + this.mergeCount);
 
     if (!this.isConverge.get()) {
-      for (int i = 0; i < weightUpdates.length; ++i) {
-        weightUpdates[i] = weightUpdates[i].divide(this.SlaveCount);
-        prevWeightUpdates[i] = prevWeightUpdates[i].divide(this.SlaveCount);
-      }
-
       synchronized (inMemoryModel) {
-        this.inMemoryModel.updateWeightMatrices(weightUpdates);
-        this.inMemoryModel.setPrevWeightMatrices(prevWeightUpdates);
 
+        LOG.info(">>>> before: " + this.inMemoryModel.getWeightMatrices()[0].get(0, 0));
+        
+        // this.inMemoryModel.addWeights(weightUpdates);
+        // this.inMemoryModel.addPrevWeights(prevWeightUpdates);
+        
+        LOG.info(", after: " + this.inMemoryModel.getWeightMatrices()[0].get(0, 0));
+        
         // add trainingError to trainingErrors
         this.trainingErrors[this.curTrainingError++] = trainingError;
 

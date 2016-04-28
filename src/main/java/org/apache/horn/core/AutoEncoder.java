@@ -28,6 +28,7 @@ import org.apache.hama.commons.math.DoubleFunction;
 import org.apache.hama.commons.math.DoubleMatrix;
 import org.apache.hama.commons.math.DoubleVector;
 import org.apache.hama.ml.util.FeatureTransformer;
+import org.apache.horn.core.Constants.LearningStyle;
 import org.apache.horn.funcs.FunctionFactory;
 
 import com.google.common.base.Preconditions;
@@ -59,7 +60,7 @@ public class AutoEncoder {
     model.addLayer(inputDimensions, true,
         FunctionFactory.createDoubleFunction("Sigmoid"), null);
     model
-        .setLearningStyle(AbstractLayeredNeuralNetwork.LearningStyle.UNSUPERVISED);
+        .setLearningStyle(LearningStyle.UNSUPERVISED);
     model.setCostFunction(FunctionFactory
         .createDoubleDoubleFunction("SquaredError"));
   }

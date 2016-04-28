@@ -22,6 +22,9 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Map;
 
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -47,9 +50,10 @@ import com.google.common.io.Closeables;
  * 
  */
 public abstract class AbstractNeuralNetwork implements Writable {
+
   protected HamaConfiguration conf;
   protected FileSystem fs;
-
+  
   private static final double DEFAULT_LEARNING_RATE = 0.5;
 
   protected double learningRate;
@@ -68,21 +72,31 @@ public abstract class AbstractNeuralNetwork implements Writable {
     this.featureTransformer = new DefaultFeatureTransformer();
   }
 
-  public AbstractNeuralNetwork(String modelPath) {
-    this.modelPath = modelPath;
-  }
-
   public AbstractNeuralNetwork(HamaConfiguration conf, String modelPath) {
     try {
       this.conf = conf;
-      this.fs = FileSystem.get(conf);
       this.modelPath = modelPath;
-
       this.readFromModel();
     } catch (IOException e) {
       e.printStackTrace();
     }
+  }
 
+  /**
+   * Set the degree of aggression during model training, a large learning rate
+   * can increase the training speed, but it also decrease the chance of model
+   * converge. Recommend in range (0, 0.3).
+   * 
+   * @param learningRate
+   */
+  public void setLearningRate(double learningRate) {
+    Preconditions.checkArgument(learningRate > 0,
+        "Learning rate must be larger than 0.");
+    this.learningRate = learningRate;
+  }
+
+  public double getLearningRate() {
+    return this.learningRate;
   }
 
   public void isLearningRateDecay(boolean decay) {
@@ -102,19 +116,21 @@ public abstract class AbstractNeuralNetwork implements Writable {
    * @throws ClassNotFoundException 
    * @throws IOException
    */
-  public BSPJob train(Configuration conf) throws ClassNotFoundException, IOException, InterruptedException {
+  public BSPJob train(HamaConfiguration conf) throws ClassNotFoundException, IOException, InterruptedException {
     Preconditions.checkArgument(this.modelPath != null,
         "Please set the model path before training.");
-
     // train with BSP job
-    return trainInternal((HamaConfiguration) conf);
+      return trainInternal(conf);
   }
 
   /**
    * Train the model with the path of given training data and parameters.
+   * 
+   * @param dataInputPath
+   * @param trainingParams
    */
-  protected abstract BSPJob trainInternal(HamaConfiguration hamaConf)
-      throws IOException, InterruptedException, ClassNotFoundException;
+  protected abstract BSPJob trainInternal(HamaConfiguration conf) throws IOException,
+      InterruptedException, ClassNotFoundException;
 
   /**
    * Read the model meta-data from the specified location.
@@ -124,9 +140,18 @@ public abstract class AbstractNeuralNetwork implements Writable {
   protected void readFromModel() throws IOException {
     Preconditions.checkArgument(this.modelPath != null,
         "Model path has not been set.");
-    FSDataInputStream is = new FSDataInputStream(fs.open(new Path(modelPath)));
-    this.readFields(is);
-    Closeables.close(is, false);
+    Configuration conf = new Configuration();
+    FSDataInputStream is = null;
+    try {
+      URI uri = new URI(this.modelPath);
+      FileSystem fs = FileSystem.get(uri, conf);
+      is = new FSDataInputStream(fs.open(new Path(modelPath)));
+      this.readFields(is);
+    } catch (URISyntaxException e) {
+      e.printStackTrace();
+    } finally {
+      Closeables.close(is, false);
+    }
   }
 
   /**
@@ -137,9 +162,16 @@ public abstract class AbstractNeuralNetwork implements Writable {
   public void writeModelToFile() throws IOException {
     Preconditions.checkArgument(this.modelPath != null,
         "Model path has not been set.");
-
-    FSDataOutputStream is = fs.create(new Path(this.modelPath), true);
-    this.write(is);
+    Configuration conf = new Configuration();
+    FSDataOutputStream is = null;
+    try {
+      URI uri = new URI(this.modelPath);
+      FileSystem fs = FileSystem.get(uri, conf);
+      is = fs.create(new Path(this.modelPath), true);
+      this.write(is);
+    } catch (URISyntaxException e) {
+      e.printStackTrace();
+    }
 
     Closeables.close(is, false);
   }

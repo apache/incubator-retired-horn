@@ -23,30 +23,29 @@ Then, we measure the margin of error of the output and adjust the weights accord
     public void backward(
         Iterable<Synapse<DoubleWritable, DoubleWritable>> messages)
         throws IOException {
+      double gradient = 0;
       for (Synapse<DoubleWritable, DoubleWritable> m : messages) {
         // Calculates error gradient for each neuron
-        double gradient = this.squashingFunction.applyDerivative(this
-            .getOutput()) * (m.getDelta() * m.getWeight());
-        this.backpropagate(gradient);
+        double gradient += (m.getDelta() * m.getWeight());
 
         // Weight corrections
         double weight = -this.getLearningRate() * this.getOutput()
             * m.getDelta() + this.getMomentumWeight() * m.getPrevWeight();
         this.push(weight);
       }
+
+      this.backpropagate(gradient
+          * this.squashingFunction.applyDerivative(this.getOutput()));
     }
   }
 ```
-The advantages of this programming model are:
-
- * Easy and intuitive to use
- * Flexible to make your own CUDA kernels
- * Allows multithreading to be used internally
+The advantages of this programming model is easy and intuitive to use.
 
 Also, Apache Horn provides a simplified and intuitive configuration interface. To create neural network job and submit it to existing Hadoop or Hama cluster, we just add the layer with its properties such as squashing function and neuron class. The below example configures the create 4-layer neural network with 500 neurons in hidden layers for train MNIST dataset:
 ```Java
   HornJob job = new HornJob(conf, MultiLayerPerceptron.class);
   job.setLearningRate(learningRate);
+  job.setTrainingMethod(TrainingMethod.GRADIENT_DESCENT);
   ..
 
   job.inputLayer(784, Sigmoid.class, StandardNeuron.class);
@@ -54,6 +53,20 @@ Also, Apache Horn provides a simplified and intuitive configuration interface. T
   job.addLayer(500, Sigmoid.class, StandardNeuron.class);
   job.outputLayer(10, Sigmoid.class, StandardNeuron.class);
   job.setCostFunction(CrossEntropy.class);
+```
+
+## Quick Run Example
+
+Download a MNIST training and label datasets, and convert into a HDFS sequence file with following command:
+```
+ % bin/horn jar horn-0.x.0.jar MNISTConverter train-images.idx3-ubyte train-labels.idx1-ubyte /tmp/mnist.seq 
+```
+
+Then, train it with following command (in this example, we used η 0.002, λ 0.1, 100 hidden units, and minibatch 10):
+```
+ % bin/horn jar horn-0.x.0.jar MultiLayerPerceptron /tmp/model /tmp/mnist.seq \
+   0.002 0.0 0.1 784 100 10 10 12000
+ 
 ```
 
 ## High Scalability

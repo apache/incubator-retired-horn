@@ -22,6 +22,8 @@ import java.io.IOException;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPJob;
 import org.apache.hama.commons.math.Function;
+import org.apache.horn.core.Constants.LearningStyle;
+import org.apache.horn.core.Constants.TrainingMethod;
 import org.apache.horn.funcs.FunctionFactory;
 
 public class HornJob extends BSPJob {
@@ -77,16 +79,28 @@ public class HornJob extends BSPJob {
     this.conf.setInt("training.batch.size", batchSize);
   }
 
-  public void setLearningRate(double learningRate) {
-    this.conf.setDouble("mlp.learning.rate", learningRate);
+  public void setTrainingMethod(TrainingMethod method) {
+    this.neuralNetwork.setTrainingMethod(method);
   }
-
+  
+  public void setLearningStyle(LearningStyle style) {
+    this.neuralNetwork.setLearningStyle(style);
+  }
+  
+  public void setLearningRate(double learningRate) {
+    this.neuralNetwork.setLearningRate(learningRate);
+  }
+  
   public void setConvergenceCheckInterval(int n) {
     this.conf.setInt("convergence.check.interval", n);
   }
 
   public void setMomentumWeight(double momentumWeight) {
-    this.conf.setDouble("mlp.momentum.weight", momentumWeight);
+    this.neuralNetwork.setMomemtumWeight(momentumWeight);
+  }
+  
+  public void setRegularizationWeight(double regularizationWeight) {
+    this.neuralNetwork.setRegularizationWeight(regularizationWeight);
   }
 
   public LayeredNeuralNetwork getNeuralNetwork() {
@@ -95,16 +109,12 @@ public class HornJob extends BSPJob {
 
   public boolean waitForCompletion(boolean verbose) throws IOException,
       InterruptedException, ClassNotFoundException {
-    BSPJob job = neuralNetwork.train(this.conf);
+    BSPJob job = neuralNetwork.train((HamaConfiguration) this.conf);
     if (verbose) {
       return job.waitForCompletion(true);
     } else {
       return job.waitForCompletion(false);
     }
-  }
-
-  public void setRegularizationWeight(double regularizationWeight) {
-    this.conf.setDouble("regularization.weight", regularizationWeight);
   }
 
   public void setModelPath(String modelPath) {

@@ -39,6 +39,8 @@ public class ParameterMessage implements Writable {
   protected boolean converge;
 
   public ParameterMessage() {
+    this.converge = false;
+    this.trainingError = 0.0d;
   }
 
   public ParameterMessage(double trainingError, boolean converge,
@@ -53,15 +55,19 @@ public class ParameterMessage implements Writable {
   public void readFields(DataInput input) throws IOException {
     trainingError = input.readDouble();
     converge = input.readBoolean();
-    int numMatrices = input.readInt();
-    boolean hasPrevMatrices = input.readBoolean();
-    curMatrices = new DenseDoubleMatrix[numMatrices];
-    // read matrice updates
-    for (int i = 0; i < curMatrices.length; ++i) {
-      curMatrices[i] = (DenseDoubleMatrix) MatrixWritable.read(input);
+    boolean hasCurMatrices = input.readBoolean();
+    if(hasCurMatrices) {
+      int numMatrices = input.readInt();
+      curMatrices = new DenseDoubleMatrix[numMatrices];
+      // read matrice updates
+      for (int i = 0; i < curMatrices.length; ++i) {
+        curMatrices[i] = (DenseDoubleMatrix) MatrixWritable.read(input);
+      }
     }
-
+    
+    boolean hasPrevMatrices = input.readBoolean();
     if (hasPrevMatrices) {
+      int numMatrices = input.readInt();
       prevMatrices = new DenseDoubleMatrix[numMatrices];
       // read previous matrices updates
       for (int i = 0; i < prevMatrices.length; ++i) {
@@ -74,16 +80,21 @@ public class ParameterMessage implements Writable {
   public void write(DataOutput output) throws IOException {
     output.writeDouble(trainingError);
     output.writeBoolean(converge);
-    output.writeInt(curMatrices.length);
+    if (curMatrices == null) {
+      output.writeBoolean(false);
+    } else {
+      output.writeBoolean(true);
+      output.writeInt(curMatrices.length);
+      for (DoubleMatrix matrix : curMatrices) {
+        MatrixWritable.write(matrix, output);
+      }
+    }
+    
     if (prevMatrices == null) {
       output.writeBoolean(false);
     } else {
       output.writeBoolean(true);
-    }
-    for (DoubleMatrix matrix : curMatrices) {
-      MatrixWritable.write(matrix, output);
-    }
-    if (prevMatrices != null) {
+      output.writeInt(prevMatrices.length);
       for (DoubleMatrix matrix : prevMatrices) {
         MatrixWritable.write(matrix, output);
       }

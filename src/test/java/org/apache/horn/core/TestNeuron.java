@@ -24,6 +24,7 @@ import java.util.List;
 import junit.framework.TestCase;
 
 import org.apache.hadoop.io.DoubleWritable;
+import org.apache.horn.funcs.CrossEntropy;
 import org.apache.horn.funcs.Sigmoid;
 
 public class TestNeuron extends TestCase {
@@ -43,9 +44,10 @@ public class TestNeuron extends TestCase {
         sum += m.getInput() * m.getWeight();
       }
       sum += (bias * theta);
+      System.out.println(new CrossEntropy().apply(0.000001, 1.0));
       this.feedforward(new Sigmoid().apply(sum));
     }
-
+    
     @Override
     public void backward(
         Iterable<Synapse<DoubleWritable, DoubleWritable>> messages)

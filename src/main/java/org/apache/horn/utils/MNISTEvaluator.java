@@ -20,48 +20,46 @@ package org.apache.horn.utils;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.SequenceFile;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.commons.io.VectorWritable;
 import org.apache.hama.commons.math.DenseDoubleVector;
+import org.apache.hama.commons.math.DoubleVector;
+import org.apache.horn.core.LayeredNeuralNetwork;
 
-public class MNISTConverter {
+public class MNISTEvaluator {
 
   private static int PIXELS = 28 * 28;
-
+  
   private static double rescale(double x) {
     return 1 - (255 - x) / 255;
   }
-
-  public static void main(String[] args) throws Exception {
+  
+  public static void main(String[] args) throws IOException {
     if (args.length < 3) {
-      System.out.println("Usage: <TRAINING_DATA> <LABELS_DATA> <OUTPUT_PATH>");
+      System.out.println("Usage: <TRAINED_MODEL> <TEST_IMAGES> <TEST_LABELS>");
       System.out
-          .println("ex) train-images.idx3-ubyte train-labels.idx1-ubyte /tmp/mnist.seq");
+          .println("ex) /tmp/model t10k-images.idx3-ubyte t10k-labels.idx1-ubyte");
       System.exit(1);
     }
 
-    String training_data = args[0];
-    String labels_data = args[1];
-    String output = args[2];
+    String modelPath = args[0];
+    String training_data = args[1];
+    String labels_data = args[2];
 
     DataInputStream imagesIn = new DataInputStream(new FileInputStream(
         new File(training_data)));
     DataInputStream labelsIn = new DataInputStream(new FileInputStream(
         new File(labels_data)));
-
+    
     imagesIn.readInt(); // Magic number
     int count = imagesIn.readInt();
     labelsIn.readInt(); // Magic number
     labelsIn.readInt(); // Count
     imagesIn.readInt(); // Rows
     imagesIn.readInt(); // Cols
-
-    System.out.println("Writing " + count + " samples on " + output);
+    
+    System.out.println("Evaluating " + count + " images");
 
     byte[][] images = new byte[count][PIXELS];
     byte[] labels = new byte[count];
@@ -71,33 +69,43 @@ public class MNISTConverter {
     }
 
     HamaConfiguration conf = new HamaConfiguration();
-    FileSystem fs = FileSystem.get(conf);
-
-    @SuppressWarnings("deprecation")
-    SequenceFile.Writer writer = new SequenceFile.Writer(fs, conf, new Path(
-        output), LongWritable.class, VectorWritable.class);
-
+    LayeredNeuralNetwork ann = new LayeredNeuralNetwork(conf, modelPath);
+    
+    int correct = 0;
     for (int i = 0; i < count; i++) {
-      double[] vals = new double[PIXELS + 10];
+      double[] vals = new double[PIXELS];
       for (int j = 0; j < PIXELS; j++) {
         vals[j] = rescale((images[i][j] & 0xff));
       }
       int label = (labels[i] & 0xff);
-      // embedding to one-hot vector
-      for (int j = 0; j < 10; j++) {
-        if (j == label)
-          vals[PIXELS + j] = 1.0;
-        else
-          vals[PIXELS + j] = 0.0;
-      }
 
-      writer.append(new LongWritable(), new VectorWritable(
-          new DenseDoubleVector(vals)));
+      DoubleVector instance = new DenseDoubleVector(vals);
+      DoubleVector result = ann.getOutput(instance);
+      
+      if(getNumber(result) == label) {
+        correct++;
+      }
     }
 
+    System.out.println((double) correct / count);
+    // TODO System.out.println("Precision = " + (tp / (tp + fp)));
+    //System.out.println("Recall = " + (tp / (tp + fn)));
+    //System.out.println("Accuracy = " + ((tp + tn) / (tp + tn + fp + fn)));
+    
     imagesIn.close();
     labelsIn.close();
-    writer.close();
   }
 
+  private static int getNumber(DoubleVector result) {
+    double max = 0;
+    int index = -1;
+    for(int x = 0; x < result.getLength(); x++) {
+      double curr = result.get(x);
+      if(max < curr) {
+        max = curr;
+        index = x;
+      }
+    }
+    return index;
+  }
 }

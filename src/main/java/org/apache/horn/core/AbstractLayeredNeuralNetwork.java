@@ -28,6 +28,8 @@ import org.apache.hama.commons.math.DoubleDoubleFunction;
 import org.apache.hama.commons.math.DoubleFunction;
 import org.apache.hama.commons.math.DoubleMatrix;
 import org.apache.hama.commons.math.DoubleVector;
+import org.apache.horn.core.Constants.LearningStyle;
+import org.apache.horn.core.Constants.TrainingMethod;
 import org.apache.horn.funcs.FunctionFactory;
 
 import com.google.common.base.Preconditions;
@@ -45,9 +47,13 @@ import com.google.common.collect.Lists;
  */
 abstract class AbstractLayeredNeuralNetwork extends AbstractNeuralNetwork {
 
+  private static final double DEFAULT_REGULARIZATION_WEIGHT = 0;
   private static final double DEFAULT_MOMENTUM_WEIGHT = 0.1;
 
   double trainingError;
+
+  /* The weight of regularization */
+  protected double regularizationWeight;
 
   /* The momentumWeight */
   protected double momentumWeight;
@@ -62,16 +68,8 @@ abstract class AbstractLayeredNeuralNetwork extends AbstractNeuralNetwork {
   
   protected LearningStyle learningStyle;
 
-  public static enum TrainingMethod {
-    GRADIENT_DESCENT
-  }
-  
-  public static enum LearningStyle {
-    UNSUPERVISED,
-    SUPERVISED
-  }
-  
   public AbstractLayeredNeuralNetwork() {
+    this.regularizationWeight = DEFAULT_REGULARIZATION_WEIGHT;
     this.momentumWeight = DEFAULT_MOMENTUM_WEIGHT;
     this.trainingMethod = TrainingMethod.GRADIENT_DESCENT;
     this.learningStyle = LearningStyle.SUPERVISED;
@@ -79,6 +77,38 @@ abstract class AbstractLayeredNeuralNetwork extends AbstractNeuralNetwork {
 
   public AbstractLayeredNeuralNetwork(HamaConfiguration conf, String modelPath) {
     super(conf, modelPath);
+  }
+
+  /**
+   * Set the regularization weight. Recommend in the range [0, 0.1), More
+   * complex the model is, less weight the regularization is.
+   * 
+   * @param regularizationWeight
+   */
+  public void setRegularizationWeight(double regularizationWeight) {
+    Preconditions.checkArgument(regularizationWeight >= 0
+        && regularizationWeight < 1.0,
+        "Regularization weight must be in range [0, 1.0)");
+    this.regularizationWeight = regularizationWeight;
+  }
+
+  public double getRegularizationWeight() {
+    return this.regularizationWeight;
+  }
+
+  /**
+   * Set the momemtum weight for the model. Recommend in range [0, 0.5].
+   * 
+   * @param momentumWeight
+   */
+  public void setMomemtumWeight(double momentumWeight) {
+    Preconditions.checkArgument(momentumWeight >= 0 && momentumWeight <= 1.0,
+        "Momentum weight must be in range [0, 1.0]");
+    this.momentumWeight = momentumWeight;
+  }
+
+  public double getMomemtumWeight() {
+    return this.momentumWeight;
   }
 
   public void setTrainingMethod(TrainingMethod method) {
@@ -117,7 +147,6 @@ abstract class AbstractLayeredNeuralNetwork extends AbstractNeuralNetwork {
    *          is f(x) = x by default.
    * @return The layer index, starts with 0.
    */
-  @SuppressWarnings("rawtypes")
   public abstract int addLayer(int size, boolean isFinalLayer,
       DoubleFunction squashingFunction, Class<? extends Neuron> neuronClass);
 
@@ -182,6 +211,8 @@ abstract class AbstractLayeredNeuralNetwork extends AbstractNeuralNetwork {
   @Override
   public void readFields(DataInput input) throws IOException {
     super.readFields(input);
+    // read regularization weight
+    this.regularizationWeight = input.readDouble();
     // read momentum weight
     this.momentumWeight = input.readDouble();
 
@@ -203,6 +234,8 @@ abstract class AbstractLayeredNeuralNetwork extends AbstractNeuralNetwork {
   @Override
   public void write(DataOutput output) throws IOException {
     super.write(output);
+    // write regularization weight
+    output.writeDouble(this.regularizationWeight);
     // write momentum weight
     output.writeDouble(this.momentumWeight);
 

@@ -21,6 +21,7 @@ import java.io.IOException;
 
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hama.HamaConfiguration;
+import org.apache.horn.core.Constants.TrainingMethod;
 import org.apache.horn.core.HornJob;
 import org.apache.horn.core.Neuron;
 import org.apache.horn.core.Synapse;
@@ -48,40 +49,43 @@ public class MultiLayerPerceptron {
     public void backward(
         Iterable<Synapse<DoubleWritable, DoubleWritable>> messages)
         throws IOException {
+      double gradient = 0;
       for (Synapse<DoubleWritable, DoubleWritable> m : messages) {
         // Calculates error gradient for each neuron
-        double gradient = this.squashingFunction.applyDerivative(this
-            .getOutput()) * (m.getDelta() * m.getWeight());
-        this.backpropagate(gradient);
+        gradient += (m.getDelta() * m.getWeight());
 
         // Weight corrections
         double weight = -this.getLearningRate() * this.getOutput()
             * m.getDelta() + this.getMomentumWeight() * m.getPrevWeight();
         this.push(weight);
       }
+
+      this.backpropagate(gradient
+          * this.squashingFunction.applyDerivative(this.getOutput()));
     }
   }
 
   public static HornJob createJob(HamaConfiguration conf, String modelPath,
       String inputPath, double learningRate, double momemtumWeight,
-      double regularizationWeight, int features, int labels, int maxIteration,
-      int numOfTasks) throws IOException {
+      double regularizationWeight, int features, int hu, int labels,
+      int miniBatch, int maxIteration) throws IOException {
 
     HornJob job = new HornJob(conf, MultiLayerPerceptron.class);
     job.setTrainingSetPath(inputPath);
     job.setModelPath(modelPath);
 
-    job.setNumBspTask(numOfTasks);
     job.setMaxIteration(maxIteration);
     job.setLearningRate(learningRate);
     job.setMomentumWeight(momemtumWeight);
     job.setRegularizationWeight(regularizationWeight);
-
-    job.setConvergenceCheckInterval(1000);
-    job.setBatchSize(300);
+    
+    job.setConvergenceCheckInterval(600);
+    job.setBatchSize(miniBatch);
+    
+    job.setTrainingMethod(TrainingMethod.GRADIENT_DESCENT);
 
     job.inputLayer(features, Sigmoid.class, StandardNeuron.class);
-    job.addLayer(15, Sigmoid.class, StandardNeuron.class);
+    job.addLayer(hu, Sigmoid.class, StandardNeuron.class);
     job.outputLayer(labels, Sigmoid.class, StandardNeuron.class);
 
     job.setCostFunction(CrossEntropy.class);
@@ -92,18 +96,18 @@ public class MultiLayerPerceptron {
   public static void main(String[] args) throws IOException,
       InterruptedException, ClassNotFoundException {
     if (args.length < 9) {
-      System.out
-          .println("Usage: <MODEL_PATH> <INPUT_PATH> "
-              + "<LEARNING_RATE> <MOMEMTUM_WEIGHT> <REGULARIZATION_WEIGHT> "
-              + "<FEATURE_DIMENSION> <LABEL_DIMENSION> <MAX_ITERATION> <NUM_TASKS>");
-      System.exit(1);
+      System.out.println("Usage: <MODEL_PATH> <INPUT_PATH> "
+          + "<LEARNING_RATE> <MOMEMTUM_WEIGHT> <REGULARIZATION_WEIGHT> "
+          + "<FEATURE_DIMENSION> <HIDDEN_UNITS> <LABEL_DIMENSION> "
+          + "<BATCH_SIZE> <MAX_ITERATION>");
+      System.exit(-1);
     }
 
     HornJob ann = createJob(new HamaConfiguration(), args[0], args[1],
         Double.parseDouble(args[2]), Double.parseDouble(args[3]),
         Double.parseDouble(args[4]), Integer.parseInt(args[5]),
         Integer.parseInt(args[6]), Integer.parseInt(args[7]),
-        Integer.parseInt(args[8]));
+        Integer.parseInt(args[8]), Integer.parseInt(args[9]));
 
     long startTime = System.currentTimeMillis();
     if (ann.waitForCompletion(true)) {

@@ -69,7 +69,7 @@ public class Synapse<M extends Writable, W extends Writable> implements
   public double getPrevWeight() {
     return prevWeight.get();
   }
-
+  
   @Override
   public void readFields(DataInput in) throws IOException {
     message.readFields(in);

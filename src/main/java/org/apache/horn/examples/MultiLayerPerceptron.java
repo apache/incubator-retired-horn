@@ -27,6 +27,7 @@ import org.apache.horn.core.Neuron;
 import org.apache.horn.core.Synapse;
 import org.apache.horn.funcs.CrossEntropy;
 import org.apache.horn.funcs.Sigmoid;
+import org.apache.horn.funcs.SoftMax;
 
 public class MultiLayerPerceptron {
 
@@ -41,8 +42,7 @@ public class MultiLayerPerceptron {
       for (Synapse<DoubleWritable, DoubleWritable> m : messages) {
         sum += m.getInput() * m.getWeight();
       }
-
-      this.feedforward(this.squashingFunction.apply(sum));
+      this.feedforward(squashingFunction.apply(sum));
     }
 
     @Override
@@ -61,7 +61,7 @@ public class MultiLayerPerceptron {
       }
 
       this.backpropagate(gradient
-          * this.squashingFunction.applyDerivative(this.getOutput()));
+          * squashingFunction.applyDerivative(getOutput()));
     }
   }
 
@@ -78,15 +78,15 @@ public class MultiLayerPerceptron {
     job.setLearningRate(learningRate);
     job.setMomentumWeight(momemtumWeight);
     job.setRegularizationWeight(regularizationWeight);
-    
+
     job.setConvergenceCheckInterval(600);
     job.setBatchSize(miniBatch);
-    
+
     job.setTrainingMethod(TrainingMethod.GRADIENT_DESCENT);
 
     job.inputLayer(features, Sigmoid.class, StandardNeuron.class);
     job.addLayer(hu, Sigmoid.class, StandardNeuron.class);
-    job.outputLayer(labels, Sigmoid.class, StandardNeuron.class);
+    job.outputLayer(labels, SoftMax.class, StandardNeuron.class);
 
     job.setCostFunction(CrossEntropy.class);
 

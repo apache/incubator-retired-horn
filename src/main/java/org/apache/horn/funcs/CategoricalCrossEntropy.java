@@ -15,31 +15,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.horn.core;
+package org.apache.horn.funcs;
 
-import java.io.IOException;
+import org.apache.hama.commons.math.DoubleDoubleFunction;
 
-import org.apache.hadoop.io.Writable;
+/**
+ * for softmaxed output 
+ */
+public class CategoricalCrossEntropy extends DoubleDoubleFunction {
+  
+  private static final double epsilon = 1e-8;
+  
+  @Override
+  public double apply(double target, double actual) {
+    return -target * Math.log(Math.max(actual, epsilon));
+  }
 
-public interface NeuronInterface<M extends Writable> {
-
-  /**
-   * This method is called when the messages are propagated from the next layer.
-   * It can be used to calculate the activation or intermediate output.
-   * 
-   * @param messages
-   * @throws IOException
-   */
-  public void forward(Iterable<M> messages) throws IOException;
-
-  /**
-   * This method is called when the errors are propagated from the previous
-   * layer. It can be used to calculate the error of each neuron and change the
-   * weights.
-   * 
-   * @param messages
-   * @throws IOException
-   */
-  public void backward(Iterable<M> messages) throws IOException;
+  @Override
+  public double applyDerivative(double target, double actual) {
+    // o - y
+    return -(target - actual);
+  }
 
 }

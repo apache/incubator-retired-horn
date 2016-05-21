@@ -17,28 +17,42 @@
  */
 package org.apache.horn.funcs;
 
-import org.apache.hama.commons.math.DoubleFunction;
+import java.io.IOException;
 
-/**
- * The rectifier function
- * 
- * <pre>
- * f(x) = max(0, x)
- * </pre>
- */
-public class ReLU extends DoubleFunction {
+import org.apache.hama.commons.math.DenseDoubleVector;
+import org.apache.hama.commons.math.DoubleFunction;
+import org.apache.hama.commons.math.DoubleVector;
+import org.apache.horn.core.IntermediateOutput;
+
+public class SoftMax extends DoubleFunction {
 
   @Override
   public double apply(double value) {
-    return Math.max(0.001, value);
+    // it will be handled by intermediate output handler
+    return value;
   }
 
   @Override
   public double applyDerivative(double value) {
-    if (value > 0)
-      return 0.999;
-    else
-      return 0.001;
+    return value * (1d - value);
+  }
+  
+  public static class SoftMaxOutputComputer extends IntermediateOutput {
+
+    @Override
+    public DoubleVector interlayer(DoubleVector output) throws IOException {
+      DoubleVector expVec = new DenseDoubleVector(output.getDimension());
+      double sum = 0.0;
+      for(int i = 0; i < output.getDimension(); ++i) {
+        double exp = Math.exp(output.get(i));
+        sum += exp;
+        expVec.set(i, exp);
+      }
+      // divide by the sum of exponential of the whole vector
+      DoubleVector softmaxed = expVec.divide(sum);
+      return softmaxed;
+    }
+
   }
 
 }

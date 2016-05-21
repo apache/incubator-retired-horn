@@ -58,7 +58,7 @@ if [ "$JAVA_HOME" = "" ]; then
 fi
 
 JAVA=$JAVA_HOME/bin/java
-JAVA_HEAP_MAX=-Xmx512m
+JAVA_HEAP_MAX=-Xmx2048m
 
 # check envvars which might override default args
 if [ "$HORN_HEAPSIZE" != "" ]; then

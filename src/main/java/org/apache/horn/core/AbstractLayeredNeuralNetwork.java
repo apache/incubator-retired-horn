@@ -30,7 +30,10 @@ import org.apache.hama.commons.math.DoubleMatrix;
 import org.apache.hama.commons.math.DoubleVector;
 import org.apache.horn.core.Constants.LearningStyle;
 import org.apache.horn.core.Constants.TrainingMethod;
+import org.apache.horn.funcs.CategoricalCrossEntropy;
+import org.apache.horn.funcs.CrossEntropy;
 import org.apache.horn.funcs.FunctionFactory;
+import org.mortbay.log.Log;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -65,7 +68,7 @@ abstract class AbstractLayeredNeuralNetwork extends AbstractNeuralNetwork {
   protected List<Integer> layerSizeList;
 
   protected TrainingMethod trainingMethod;
-  
+
   protected LearningStyle learningStyle;
 
   public AbstractLayeredNeuralNetwork() {
@@ -77,6 +80,11 @@ abstract class AbstractLayeredNeuralNetwork extends AbstractNeuralNetwork {
 
   public AbstractLayeredNeuralNetwork(HamaConfiguration conf, String modelPath) {
     super(conf, modelPath);
+    if (this.layerSizeList.get(this.layerSizeList.size() - 1) > 1
+        && this.costFunction.getFunctionName().equalsIgnoreCase(
+            CrossEntropy.class.getSimpleName())) {
+      this.setCostFunction(new CategoricalCrossEntropy());
+    }
   }
 
   /**
@@ -118,11 +126,11 @@ abstract class AbstractLayeredNeuralNetwork extends AbstractNeuralNetwork {
   public TrainingMethod getTrainingMethod() {
     return this.trainingMethod;
   }
-  
+
   public void setLearningStyle(LearningStyle style) {
     this.learningStyle = style;
   }
-  
+
   public LearningStyle getLearningStyle() {
     return this.learningStyle;
   }

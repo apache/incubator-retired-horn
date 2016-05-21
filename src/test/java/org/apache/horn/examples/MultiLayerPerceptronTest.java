@@ -23,8 +23,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
 
-import junit.framework.TestCase;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileSystem;
@@ -32,18 +30,24 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hama.Constants;
+import org.apache.hama.HamaCluster;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.commons.io.VectorWritable;
 import org.apache.hama.commons.math.DenseDoubleVector;
 import org.apache.hama.commons.math.DoubleVector;
 import org.apache.horn.core.HornJob;
 import org.apache.horn.core.LayeredNeuralNetwork;
+import org.apache.horn.core.Constants.TrainingMethod;
+import org.apache.horn.examples.MultiLayerPerceptron.StandardNeuron;
+import org.apache.horn.funcs.CrossEntropy;
+import org.apache.horn.funcs.Sigmoid;
 
 /**
  * Test the functionality of NeuralNetwork Example.
  */
-public class MultiLayerPerceptronTest extends TestCase { // HamaCluster {
-  private static final Log LOG = LogFactory.getLog(MultiLayerPerceptronTest.class);
+public class MultiLayerPerceptronTest extends HamaCluster {
+  private static final Log LOG = LogFactory
+      .getLog(MultiLayerPerceptronTest.class);
   private HamaConfiguration conf;
   private FileSystem fs;
   private String MODEL_PATH = "/tmp/neuralnets.model";
@@ -51,7 +55,7 @@ public class MultiLayerPerceptronTest extends TestCase { // HamaCluster {
   private String SEQTRAIN_DATA = "/tmp/test-neuralnets.data";
 
   public MultiLayerPerceptronTest() {
-    conf = new HamaConfiguration();/*
+    conf = new HamaConfiguration();
     conf.set("bsp.master.address", "localhost");
     conf.setBoolean("hama.child.redirect.log.console", true);
     conf.setBoolean("hama.messenger.runtime.compression", false);
@@ -62,7 +66,7 @@ public class MultiLayerPerceptronTest extends TestCase { // HamaCluster {
     conf.setInt(Constants.ZOOKEEPER_CLIENT_PORT, 21810);
     conf.set("hama.sync.client.class",
         org.apache.hama.bsp.sync.ZooKeeperSyncClientImpl.class
-            .getCanonicalName());*/
+            .getCanonicalName());
   }
 
   @Override
@@ -163,12 +167,28 @@ public class MultiLayerPerceptronTest extends TestCase { // HamaCluster {
     }
 
     try {
-      HornJob ann = MultiLayerPerceptron.createJob(conf, MODEL_PATH,
-          SEQTRAIN_DATA, 0.4, 0.2, 0.01, featureDimension, 8, labelDimension,
-          300, 10000);
+      HornJob job = new HornJob(conf, MultiLayerPerceptronTest.class);
+      job.setTrainingSetPath(SEQTRAIN_DATA);
+      job.setModelPath(MODEL_PATH);
 
+      job.setMaxIteration(1000);
+      job.setLearningRate(0.4);
+      job.setMomentumWeight(0.2);
+      job.setRegularizationWeight(0.001);
+
+      job.setConvergenceCheckInterval(100);
+      job.setBatchSize(300);
+
+      job.setTrainingMethod(TrainingMethod.GRADIENT_DESCENT);
+
+      job.inputLayer(featureDimension, Sigmoid.class, StandardNeuron.class);
+      job.addLayer(featureDimension, Sigmoid.class, StandardNeuron.class);
+      job.outputLayer(labelDimension, Sigmoid.class, StandardNeuron.class);
+
+      job.setCostFunction(CrossEntropy.class);
+      
       long startTime = System.currentTimeMillis();
-      if (ann.waitForCompletion(true)) {
+      if (job.waitForCompletion(true)) {
         LOG.info("Job Finished in " + (System.currentTimeMillis() - startTime)
             / 1000.0 + " seconds");
       }

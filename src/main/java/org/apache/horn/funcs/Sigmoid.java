@@ -30,6 +30,11 @@ public class Sigmoid extends DoubleFunction {
 
   @Override
   public double apply(double value) {
+    if(value > 100) { // to avoid overflow and underflow
+      return 0.9999;
+    } else if (value < -100) {
+      return 0.0001;
+    }
     return 1.0 / (1 + Math.exp(-value));
   }
 

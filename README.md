@@ -49,9 +49,8 @@ Also, Apache Horn provides a simplified and intuitive configuration interface. T
   ..
 
   job.inputLayer(784, Sigmoid.class, StandardNeuron.class);
-  job.addLayer(500, Sigmoid.class, StandardNeuron.class);
-  job.addLayer(500, Sigmoid.class, StandardNeuron.class);
-  job.outputLayer(10, Sigmoid.class, StandardNeuron.class);
+  job.addLayer(100, Sigmoid.class, StandardNeuron.class);
+  job.outputLayer(10, SoftMax.class, StandardNeuron.class);
   job.setCostFunction(CrossEntropy.class);
 ```
 
@@ -59,15 +58,17 @@ Also, Apache Horn provides a simplified and intuitive configuration interface. T
 
 Download a MNIST training and label datasets, and convert into a HDFS sequence file with following command:
 ```
- % bin/horn jar horn-0.x.0.jar MNISTConverter train-images.idx3-ubyte train-labels.idx1-ubyte /tmp/mnist.seq 
+ % bin/horn jar horn-0.x.0.jar MNISTConverter \
+   train-images.idx3-ubyte train-labels.idx1-ubyte /tmp/mnist.seq 
 ```
 
-Then, train it with following command (in this example, we used η 0.002, λ 0.1, 100 hidden units, and minibatch 10):
+Then, train it with following command (in this example, we used η 0.01, α 0.9, λ 0.0005, 100 hidden units, and minibatch 10):
 ```
  % bin/horn jar horn-0.x.0.jar MultiLayerPerceptron /tmp/model /tmp/mnist.seq \
-   0.002 0.0 0.1 784 100 10 10 12000
- 
+   0.01 0.9 0.00075 784 100 10 10 12000
 ```
+
+With this default example, you'll reach over the 95% accuracy. The local-mode of multithread-based parallel synchronous SGD will took around 1 hour to train. 
 
 ## High Scalability
 

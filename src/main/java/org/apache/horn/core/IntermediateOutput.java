@@ -17,29 +17,7 @@
  */
 package org.apache.horn.core;
 
-import java.io.IOException;
 
-import org.apache.hadoop.io.Writable;
-
-public interface NeuronInterface<M extends Writable> {
-
-  /**
-   * This method is called when the messages are propagated from the next layer.
-   * It can be used to calculate the activation or intermediate output.
-   * 
-   * @param messages
-   * @throws IOException
-   */
-  public void forward(Iterable<M> messages) throws IOException;
-
-  /**
-   * This method is called when the errors are propagated from the previous
-   * layer. It can be used to calculate the error of each neuron and change the
-   * weights.
-   * 
-   * @param messages
-   * @throws IOException
-   */
-  public void backward(Iterable<M> messages) throws IOException;
+public abstract class IntermediateOutput implements LayerInterface {
 
 }

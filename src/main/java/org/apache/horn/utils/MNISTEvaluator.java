@@ -21,6 +21,7 @@ import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Random;
 
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.commons.math.DenseDoubleVector;
@@ -30,11 +31,11 @@ import org.apache.horn.core.LayeredNeuralNetwork;
 public class MNISTEvaluator {
 
   private static int PIXELS = 28 * 28;
-  
+
   private static double rescale(double x) {
     return 1 - (255 - x) / 255;
   }
-  
+
   public static void main(String[] args) throws IOException {
     if (args.length < 3) {
       System.out.println("Usage: <TRAINED_MODEL> <TEST_IMAGES> <TEST_LABELS>");
@@ -51,15 +52,13 @@ public class MNISTEvaluator {
         new File(training_data)));
     DataInputStream labelsIn = new DataInputStream(new FileInputStream(
         new File(labels_data)));
-    
+
     imagesIn.readInt(); // Magic number
     int count = imagesIn.readInt();
     labelsIn.readInt(); // Magic number
     labelsIn.readInt(); // Count
     imagesIn.readInt(); // Rows
     imagesIn.readInt(); // Cols
-    
-    System.out.println("Evaluating " + count + " images");
 
     byte[][] images = new byte[count][PIXELS];
     byte[] labels = new byte[count];
@@ -70,28 +69,33 @@ public class MNISTEvaluator {
 
     HamaConfiguration conf = new HamaConfiguration();
     LayeredNeuralNetwork ann = new LayeredNeuralNetwork(conf, modelPath);
-    
-    int correct = 0;
-    for (int i = 0; i < count; i++) {
-      double[] vals = new double[PIXELS];
-      for (int j = 0; j < PIXELS; j++) {
-        vals[j] = rescale((images[i][j] & 0xff));
-      }
-      int label = (labels[i] & 0xff);
 
-      DoubleVector instance = new DenseDoubleVector(vals);
-      DoubleVector result = ann.getOutput(instance);
-      
-      if(getNumber(result) == label) {
-        correct++;
+    Random generator = new Random();
+    int correct = 0;
+    int total = 0;
+    for (int i = 0; i < count; i++) {
+      if (generator.nextInt(10) == 1) {
+        double[] vals = new double[PIXELS];
+        for (int j = 0; j < PIXELS; j++) {
+          vals[j] = rescale((images[i][j] & 0xff));
+        }
+        int label = (labels[i] & 0xff);
+
+        DoubleVector instance = new DenseDoubleVector(vals);
+        DoubleVector result = ann.getOutput(instance);
+
+        if (getNumber(result) == label) {
+          correct++;
+        }
+        total++;
       }
     }
 
-    System.out.println((double) correct / count);
+    System.out.println(((double) correct / total * 100) + "%");
     // TODO System.out.println("Precision = " + (tp / (tp + fp)));
-    //System.out.println("Recall = " + (tp / (tp + fn)));
-    //System.out.println("Accuracy = " + ((tp + tn) / (tp + tn + fp + fn)));
-    
+    // System.out.println("Recall = " + (tp / (tp + fn)));
+    // System.out.println("Accuracy = " + ((tp + tn) / (tp + tn + fp + fn)));
+
     imagesIn.close();
     labelsIn.close();
   }
@@ -99,9 +103,9 @@ public class MNISTEvaluator {
   private static int getNumber(DoubleVector result) {
     double max = 0;
     int index = -1;
-    for(int x = 0; x < result.getLength(); x++) {
+    for (int x = 0; x < result.getLength(); x++) {
       double curr = result.get(x);
-      if(max < curr) {
+      if (max < curr) {
         max = curr;
         index = x;
       }

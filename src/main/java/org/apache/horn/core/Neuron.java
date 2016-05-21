@@ -25,6 +25,7 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hama.commons.math.DoubleFunction;
 
 public abstract class Neuron<M extends Writable> implements Writable, NeuronInterface<M> {
+  int id;
   double output;
   double weight;
   double delta;
@@ -32,8 +33,27 @@ public abstract class Neuron<M extends Writable> implements Writable, NeuronInte
   double momentumWeight;
   double learningRate;
 
+  int layerIndex;
+  boolean isOutputLayer;
+  
   protected DoubleFunction squashingFunction;
 
+  public void setNeuronID(int id) {
+    this.id = id;
+  }
+  
+  public int getID() {
+    return id;
+  }
+  
+  public int getLayerIndex() {
+    return layerIndex;
+  }
+
+  public void setLayerIndex(int index) {
+    this.layerIndex = index;
+  }
+  
   public void feedforward(double sum) {
     this.output = sum;
   }
@@ -103,6 +123,7 @@ public abstract class Neuron<M extends Writable> implements Writable, NeuronInte
 
   @Override
   public void readFields(DataInput in) throws IOException {
+    id = in.readInt();
     output = in.readDouble();
     weight = in.readDouble();
     delta = in.readDouble();
@@ -113,6 +134,7 @@ public abstract class Neuron<M extends Writable> implements Writable, NeuronInte
 
   @Override
   public void write(DataOutput out) throws IOException {
+    out.writeInt(id);
     out.writeDouble(output);
     out.writeDouble(weight);
     out.writeDouble(delta);

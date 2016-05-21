@@ -37,6 +37,10 @@ public class FunctionFactory {
       return new Sigmoid();
     } else if (functionName.equalsIgnoreCase(Tanh.class.getSimpleName())) {
       return new Tanh();
+    } else if (functionName.equalsIgnoreCase(ReLU.class.getSimpleName())) {
+      return new ReLU();
+    } else if (functionName.equalsIgnoreCase(SoftMax.class.getSimpleName())) {
+      return new SoftMax();
     } else if (functionName.equalsIgnoreCase(IdentityFunction.class
         .getSimpleName())) {
       return new IdentityFunction();
@@ -59,7 +63,10 @@ public class FunctionFactory {
     } else if (functionName
         .equalsIgnoreCase(CrossEntropy.class.getSimpleName())) {
       return new CrossEntropy();
-    }
+    } else if (functionName
+        .equalsIgnoreCase(CategoricalCrossEntropy.class.getSimpleName())) {
+      return new CategoricalCrossEntropy();
+    } 
 
     throw new IllegalArgumentException(String.format(
         "No double double function with name '%s' exists.", functionName));

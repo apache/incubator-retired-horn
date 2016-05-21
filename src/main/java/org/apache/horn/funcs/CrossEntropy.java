@@ -29,6 +29,8 @@ import org.apache.hama.commons.math.DoubleDoubleFunction;
  */
 public class CrossEntropy extends DoubleDoubleFunction {
 
+  private static final double epsilon = 1e-8;
+  
   @Override
   public double apply(double target, double actual) {
     double adjustedTarget = (target == 0 ? 0.000001 : target);
@@ -36,10 +38,11 @@ public class CrossEntropy extends DoubleDoubleFunction {
     double adjustedActual = (actual == 0 ? 0.000001 : actual);
     adjustedActual = (actual == 1 ? 0.999999 : adjustedActual);
     
-    return -adjustedTarget * Math.log(adjustedActual) - (1 - adjustedTarget)
-        * Math.log(1 - adjustedActual);
+    return -target * Math.log(Math.max(actual, epsilon)) - (1 - target)
+        * Math.log(Math.max(1 - actual, epsilon));
+    // return -adjustedTarget * Math.log(adjustedActual) - (1 - adjustedTarget) *  Math.log(adjustedActual);
   }
-
+  
   @Override
   public double applyDerivative(double target, double actual) {
     double adjustedTarget = (target == 0 ? 0.000001 : target);

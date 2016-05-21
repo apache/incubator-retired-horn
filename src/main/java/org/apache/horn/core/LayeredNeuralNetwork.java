@@ -46,6 +46,7 @@ import org.apache.hama.util.ReflectionUtils;
 import org.apache.horn.core.Constants.LearningStyle;
 import org.apache.horn.core.Constants.TrainingMethod;
 import org.apache.horn.funcs.FunctionFactory;
+import org.apache.horn.funcs.SoftMax;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -76,7 +77,7 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
   protected List<DoubleFunction> squashingFunctionList;
 
   protected List<Class<? extends Neuron>> neuronClassList;
-  
+
   protected int finalLayerIdx;
 
   public LayeredNeuralNetwork() {
@@ -97,9 +98,20 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
    */
   public int addLayer(int size, boolean isFinalLayer,
       DoubleFunction squashingFunction, Class<? extends Neuron> neuronClass) {
+    return addLayer(size, isFinalLayer, squashingFunction, neuronClass, null);
+  }
+
+  public int addLayer(int size, boolean isFinalLayer,
+      DoubleFunction squashingFunction, Class<? extends Neuron> neuronClass,
+      Class<? extends IntermediateOutput> interlayer) {
     Preconditions.checkArgument(size > 0,
         "Size of layer must be larger than 0.");
     if (!isFinalLayer) {
+      if (this.layerSizeList.size() == 0) {
+        LOG.info("add input layer: " + size + " neurons");
+      } else {
+        LOG.info("add hidden layer: " + size + " neurons");
+      }
       size += 1;
     }
 
@@ -107,6 +119,7 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
     int layerIdx = this.layerSizeList.size() - 1;
     if (isFinalLayer) {
       this.finalLayerIdx = layerIdx;
+      LOG.info("add output layer: " + size + " neurons");
     }
 
     // add weights between current layer and previous layer, and input layer has
@@ -133,6 +146,7 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
       this.weightMatrixList.add(weightMatrix);
       this.prevWeightUpdatesList.add(new DenseDoubleMatrix(row, col));
       this.squashingFunctionList.add(squashingFunction);
+
       this.neuronClassList.add(neuronClass);
     }
     return layerIdx;
@@ -152,6 +166,7 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
 
   /**
    * Set the previous weight matrices.
+   * 
    * @param prevUpdates
    */
   void setPrevWeightMatrices(DoubleMatrix[] prevUpdates) {
@@ -263,12 +278,12 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
     for (Class<? extends Neuron> clazz : this.neuronClassList) {
       output.writeUTF(clazz.getName());
     }
-    
+
     // write squashing functions
     output.writeInt(this.squashingFunctionList.size());
     for (DoubleFunction aSquashingFunctionList : this.squashingFunctionList) {
-      WritableUtils.writeString(output, aSquashingFunctionList
-              .getFunctionName());
+      WritableUtils.writeString(output,
+          aSquashingFunctionList.getFunctionName());
     }
 
     // write weight matrices
@@ -327,21 +342,18 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
     outputCache.add(intermediateOutput);
 
     for (int i = 0; i < this.layerSizeList.size() - 1; ++i) {
-      intermediateOutput = forward(i, intermediateOutput);
-      outputCache.add(intermediateOutput);
+      forward(i, outputCache);
     }
     return outputCache;
   }
-  
+
   /**
    * @param neuronClass
    * @return a new neuron instance
    */
-  @SuppressWarnings({ "unchecked", "rawtypes" })
-  public static Neuron<Synapse<DoubleWritable, DoubleWritable>> newNeuronInstance(
-      Class<? extends Neuron> neuronClass) {
-    return (Neuron<Synapse<DoubleWritable, DoubleWritable>>) ReflectionUtils
-        .newInstance(neuronClass);
+  @SuppressWarnings({ "rawtypes" })
+  public static Neuron newNeuronInstance(Class<? extends Neuron> neuronClass) {
+    return (Neuron) ReflectionUtils.newInstance(neuronClass);
   }
 
   /**
@@ -351,25 +363,33 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
    * @param intermediateOutput The intermediateOutput of previous layer.
    * @return a new vector with the result of the operation.
    */
-  protected DoubleVector forward(int fromLayer, DoubleVector intermediateOutput) {
+  protected void forward(int fromLayer, List<DoubleVector> outputCache) {
+    DoubleVector previousOutput = outputCache.get(fromLayer * 2); // skip
+                                                                  // intermediate
+                                                                  // output
+
     DoubleMatrix weightMatrix = this.weightMatrixList.get(fromLayer);
 
     // LOG.info("intermediate: " + intermediateOutput.toString());
     // DoubleVector vec = weightMatrix.multiplyVectorUnsafe(intermediateOutput);
     // vec = vec.applyToElements(this.squashingFunctionList.get(fromLayer));
-   
+
+    DoubleFunction squashingFunction = getSquashingFunction(fromLayer);
+
     DoubleVector vec = new DenseDoubleVector(weightMatrix.getRowCount());
+
     for (int row = 0; row < weightMatrix.getRowCount(); row++) {
       List<Synapse<DoubleWritable, DoubleWritable>> msgs = new ArrayList<Synapse<DoubleWritable, DoubleWritable>>();
       for (int col = 0; col < weightMatrix.getColumnCount(); col++) {
         msgs.add(new Synapse<DoubleWritable, DoubleWritable>(
-            new DoubleWritable(intermediateOutput.get(col)),
-            new DoubleWritable(weightMatrix.get(row, col))));
+            new DoubleWritable(previousOutput.get(col)), new DoubleWritable(
+                weightMatrix.get(row, col))));
       }
       Iterable<Synapse<DoubleWritable, DoubleWritable>> iterable = msgs;
-      Neuron<Synapse<DoubleWritable, DoubleWritable>> n = newNeuronInstance(this.neuronClassList
-          .get(fromLayer));
-      n.setSquashingFunction(this.squashingFunctionList.get(fromLayer));
+      Neuron n = newNeuronInstance(this.neuronClassList.get(fromLayer));
+      n.setSquashingFunction(squashingFunction);
+      n.setLayerIndex(fromLayer);
+
       try {
         n.forward(iterable);
       } catch (IOException e) {
@@ -378,14 +398,30 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
       }
       vec.set(row, n.getOutput());
     }
-    
+
+    if (squashingFunction.getFunctionName().equalsIgnoreCase(
+        SoftMax.class.getSimpleName())) {
+      IntermediateOutput interlayer = (IntermediateOutput) ReflectionUtils
+          .newInstance(SoftMax.SoftMaxOutputComputer.class);
+      try {
+        outputCache.add(vec);
+        vec = interlayer.interlayer(vec);
+      } catch (IOException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
+    } else {
+      outputCache.add(null);
+    }
+
     // add bias
     DoubleVector vecWithBias = new DenseDoubleVector(vec.getDimension() + 1);
     vecWithBias.set(0, 1);
     for (int i = 0; i < vec.getDimension(); ++i) {
       vecWithBias.set(i + 1, vec.get(i));
     }
-    return vecWithBias;
+
+    outputCache.add(vecWithBias);
   }
 
   /**
@@ -472,6 +508,7 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
       List<DoubleVector> internalResults) {
 
     DoubleVector output = internalResults.get(internalResults.size() - 1);
+
     // initialize weight update matrices
     DenseDoubleMatrix[] weightUpdateMatrices = new DenseDoubleMatrix[this.weightMatrixList
         .size()];
@@ -487,22 +524,27 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
 
     DoubleMatrix lastWeightMatrix = this.weightMatrixList
         .get(this.weightMatrixList.size() - 1);
+
     for (int i = 0; i < deltaVec.getDimension(); ++i) {
       double costFuncDerivative = this.costFunction.applyDerivative(
           labels.get(i), output.get(i + 1));
       // add regularization
       costFuncDerivative += this.regularizationWeight
           * lastWeightMatrix.getRowVector(i).sum();
-      deltaVec.set(
-          i,
-          costFuncDerivative
-              * squashingFunction.applyDerivative(output.get(i + 1)));
+
+      if (!squashingFunction.getFunctionName().equalsIgnoreCase(
+          SoftMax.class.getSimpleName())) {
+        costFuncDerivative *= squashingFunction.applyDerivative(output
+            .get(i + 1));
+      }
+
+      deltaVec.set(i, costFuncDerivative);
     }
 
     // start from previous layer of output layer
     for (int layer = this.layerSizeList.size() - 2; layer >= 0; --layer) {
-      output = internalResults.get(layer);
-      deltaVec = backpropagate(layer, deltaVec, internalResults,
+      output = internalResults.get(layer * 2); // skip intermediate output
+      deltaVec = backpropagate(layer, deltaVec, output,
           weightUpdateMatrices[layer]);
     }
 
@@ -521,13 +563,12 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
    * @return the squashing function of the specified position.
    */
   private DoubleVector backpropagate(int curLayerIdx,
-      DoubleVector nextLayerDelta, List<DoubleVector> outputCache,
+      DoubleVector nextLayerDelta, DoubleVector curLayerOutput,
       DenseDoubleMatrix weightUpdateMatrix) {
 
     // get layer related information
     DoubleFunction squashingFunction = this.squashingFunctionList
         .get(curLayerIdx);
-    DoubleVector curLayerOutput = outputCache.get(curLayerIdx);
     DoubleMatrix weightMatrix = this.weightMatrixList.get(curLayerIdx);
     DoubleMatrix prevWeightMatrix = this.prevWeightUpdatesList.get(curLayerIdx);
 
@@ -536,16 +577,16 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
       nextLayerDelta = nextLayerDelta.slice(1,
           nextLayerDelta.getDimension() - 1);
     }
-    
+
     DoubleVector deltaVector = new DenseDoubleVector(
         weightMatrix.getColumnCount());
-    
+
     for (int row = 0; row < weightMatrix.getColumnCount(); ++row) {
-      Neuron<Synapse<DoubleWritable, DoubleWritable>> n = newNeuronInstance(this.neuronClassList
-          .get(curLayerIdx));
+      Neuron n = newNeuronInstance(this.neuronClassList.get(curLayerIdx));
       // calls setup method
       n.setLearningRate(this.learningRate);
       n.setMomentumWeight(this.momentumWeight);
+      n.setLayerIndex(curLayerIdx);
 
       n.setSquashingFunction(squashingFunction);
       n.setOutput(curLayerOutput.get(row));
@@ -568,7 +609,7 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
         // TODO Auto-generated catch block
         e.printStackTrace();
       }
-      
+
       // update weights
       weightUpdateMatrix.setColumn(row, n.getWeights());
       deltaVector.set(row, n.getDelta());
@@ -628,5 +669,5 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
   public DoubleFunction getSquashingFunction(int idx) {
     return this.squashingFunctionList.get(idx);
   }
-  
+
 }

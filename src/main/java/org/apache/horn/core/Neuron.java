@@ -62,6 +62,10 @@ public abstract class Neuron<M extends Writable> implements Writable, NeuronInte
     this.delta = gradient;
   }
 
+  public void setDelta(double delta) {
+    this.delta = delta;
+  }
+  
   public double getDelta() {
     return delta;
   }

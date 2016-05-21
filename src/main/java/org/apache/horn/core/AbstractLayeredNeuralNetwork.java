@@ -33,7 +33,6 @@ import org.apache.horn.core.Constants.TrainingMethod;
 import org.apache.horn.funcs.CategoricalCrossEntropy;
 import org.apache.horn.funcs.CrossEntropy;
 import org.apache.horn.funcs.FunctionFactory;
-import org.mortbay.log.Log;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;

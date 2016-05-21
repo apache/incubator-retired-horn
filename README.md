@@ -41,7 +41,7 @@ Then, we measure the margin of error of the output and adjust the weights accord
 ```
 The advantages of this programming model is easy and intuitive to use.
 
-Also, Apache Horn provides a simplified and intuitive configuration interface. To create neural network job and submit it to existing Hadoop or Hama cluster, we just add the layer with its properties such as squashing function and neuron class. The below example configures the create 4-layer neural network with 500 neurons in hidden layers for train MNIST dataset:
+Also, Apache Horn provides a simplified and intuitive configuration interface. To create neural network job and submit it to existing Hadoop or Hama cluster, we just add the layer with its properties such as squashing function and neuron class. The below example configures the create 2-layer neural network with 100 neurons in hidden layers for train MNIST dataset:
 ```Java
   HornJob job = new HornJob(conf, MultiLayerPerceptron.class);
   job.setLearningRate(learningRate);
@@ -65,10 +65,10 @@ Download a MNIST training and label datasets, and convert into a HDFS sequence f
 Then, train it with following command (in this example, we used η 0.01, α 0.9, λ 0.0005, 100 hidden units, and minibatch 10):
 ```
  % bin/horn jar horn-0.x.0.jar MultiLayerPerceptron /tmp/model /tmp/mnist.seq \
-   0.01 0.9 0.00075 784 100 10 10 12000
+   0.01 0.9 0.0005 784 100 10 10 12000
 ```
 
-With this default example, you'll reach over the 95% accuracy. The local-mode of multithread-based parallel synchronous SGD will took around 1 hour to train. 
+With this default example, you'll reach over the 95% accuracy. The local-mode parallel synchronous SGD based on multithreading will took around 30 mins ~ 1 hour to train. 
 
 ## High Scalability
 

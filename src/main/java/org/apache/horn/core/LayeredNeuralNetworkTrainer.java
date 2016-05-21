@@ -96,7 +96,8 @@ public final class LayeredNeuralNetworkTrainer
       try {
         LOG.info(String.format("End of training, number of iterations: %d.",
             this.iterations));
-        LOG.info(String.format("Write model back to %s", inMemoryModel.getModelPath()));
+        LOG.info(String.format("Write model back to %s",
+            inMemoryModel.getModelPath()));
         this.inMemoryModel.writeModelToFile();
       } catch (IOException e) {
         e.printStackTrace();
@@ -121,15 +122,21 @@ public final class LayeredNeuralNetworkTrainer
 
     while (this.iterations++ < maxIterations) {
       // each groom calculate the matrices updates according to local data
-      calculateUpdates(peer);
-      peer.sync();
-
-      // master merge the updates model
-      if (peer.getPeerIndex() == 0) {
-        mergeUpdates(peer);
+      if (peer.getPeerIndex() != peer.getNumPeers() - 1) {
+        calculateUpdates(peer);
+      } else {
+        // doing summation received updates
+        if (peer.getSuperstepCount() > 0) {
+          // and broadcasts previous updated weights
+          mergeUpdates(peer);
+        }
       }
+      
       peer.sync();
-      if (this.isConverge) {
+      
+      if(isConverge) {
+        if(peer.getPeerIndex() == peer.getNumPeers() - 1)
+          peer.sync();
         break;
       }
     }
@@ -189,7 +196,7 @@ public final class LayeredNeuralNetworkTrainer
         .getPrevMatricesUpdates();
     ParameterMessage outMessage = new ParameterMessage(avgTrainingError, false,
         weightUpdates, prevWeightUpdates);
-    peer.send(peer.getPeerName(0), outMessage);
+    peer.send(peer.getPeerName(peer.getNumPeers() - 1), outMessage);
   }
 
   /**
@@ -202,9 +209,9 @@ public final class LayeredNeuralNetworkTrainer
       BSPPeer<LongWritable, VectorWritable, NullWritable, NullWritable, ParameterMessage> peer)
       throws IOException {
     int numMessages = peer.getNumCurrentMessages();
-    boolean isConverge = false;
+    boolean converge = false;
     if (numMessages == 0) { // converges
-      isConverge = true;
+      converge = true;
       return;
     }
 
@@ -239,10 +246,11 @@ public final class LayeredNeuralNetworkTrainer
     this.inMemoryModel.setPrevWeightMatrices(prevMatricesUpdates);
 
     // check convergence
-    if (iterations % convergenceCheckInterval == 0) {
+    if (peer.getSuperstepCount() > 0
+        && iterations % convergenceCheckInterval == 0) {
       if (prevAvgTrainingError < curAvgTrainingError) {
         // error cannot decrease any more
-        isConverge = true;
+        converge = true;
       }
       // update
       prevAvgTrainingError = curAvgTrainingError;
@@ -251,13 +259,15 @@ public final class LayeredNeuralNetworkTrainer
       curAvgTrainingError = 0;
     }
     curAvgTrainingError += avgTrainingError / convergenceCheckInterval;
-
+    this.isConverge = converge;
+    
     // broadcast updated weight matrices
     for (String peerName : peer.getAllPeerNames()) {
-      ParameterMessage msg = new ParameterMessage(0, isConverge,
+      ParameterMessage msg = new ParameterMessage(0, converge,
           this.inMemoryModel.getWeightMatrices(),
           this.inMemoryModel.getPrevMatricesUpdates());
-      peer.send(peerName, msg);
+      if (!peer.getPeerName().equals(peerName))
+        peer.send(peerName, msg);
     }
   }
 

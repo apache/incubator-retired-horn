@@ -17,7 +17,7 @@
  */
 package org.apache.horn.funcs;
 
-import org.apache.hama.commons.math.DoubleFunction;
+import org.apache.hama.commons.math.FloatFunction;
 
 /**
  * The Sigmoid function
@@ -26,21 +26,22 @@ import org.apache.hama.commons.math.DoubleFunction;
  * f(x) = 1 / (1 + e^{-x})
  * </pre>
  */
-public class Sigmoid extends DoubleFunction {
+public class Sigmoid extends FloatFunction {
 
   @Override
-  public double apply(double value) {
-    if(value > 100) { // to avoid overflow and underflow
-      return 0.9999;
+  public float apply(float value) {
+    if (value > 100) { // to avoid overflow and underflow
+      return 0.9999f;
     } else if (value < -100) {
-      return 0.0001;
+      return 0.0001f;
     }
-    return 1.0 / (1 + Math.exp(-value));
+    return (float) (1.0f / (1.0f + Math.exp((double) (-value))));
   }
 
   @Override
-  public double applyDerivative(double value) {
-    return apply(value) * (1 - apply(value));
+  public float applyDerivative(float value) {
+    double z = apply(value); // + 0.5f;
+    return (float) (z * (1.0f - z));
   }
 
 }

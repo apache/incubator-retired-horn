@@ -21,7 +21,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import org.apache.hadoop.io.DoubleWritable;
+import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.Writable;
 
 /**
@@ -30,16 +30,16 @@ import org.apache.hadoop.io.Writable;
 public class Synapse<M extends Writable, W extends Writable> implements
     Writable {
 
-  DoubleWritable message;
-  DoubleWritable weight;
-  DoubleWritable prevWeight;
+  FloatWritable message;
+  FloatWritable weight;
+  FloatWritable prevWeight;
 
-  public Synapse(DoubleWritable message, DoubleWritable weight) {
+  public Synapse(FloatWritable message, FloatWritable weight) {
     this.message = message;
     this.weight = weight;
   }
 
-  public Synapse(DoubleWritable message, DoubleWritable weight, DoubleWritable prevWeight) {
+  public Synapse(FloatWritable message, FloatWritable weight, FloatWritable prevWeight) {
     this.message = message;
     this.weight = weight;
     this.prevWeight = prevWeight;
@@ -48,25 +48,25 @@ public class Synapse<M extends Writable, W extends Writable> implements
   /**
    * @return the activation or error message
    */
-  public double getMessage() {
+  public float getMessage() {
     return message.get();
   }
 
-  public double getInput() {
+  public float getInput() {
     // returns the input
     return message.get();
   }
   
-  public double getDelta() {
+  public float getDelta() {
     // returns the delta
     return message.get();
   }
   
-  public double getWeight() {
+  public float getWeight() {
     return weight.get();
   }
   
-  public double getPrevWeight() {
+  public float getPrevWeight() {
     return prevWeight.get();
   }
   

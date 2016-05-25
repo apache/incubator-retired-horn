@@ -19,10 +19,10 @@ package org.apache.horn.core;
 
 import java.io.IOException;
 
-import org.apache.hama.commons.math.DoubleVector;
+import org.apache.hama.commons.math.FloatVector;
 
 public interface LayerInterface {
 
-  public DoubleVector interlayer(DoubleVector intermediateOutput) throws IOException;
+  public FloatVector interlayer(FloatVector intermediateOutput) throws IOException;
   
 }

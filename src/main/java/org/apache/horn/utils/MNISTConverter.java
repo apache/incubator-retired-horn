@@ -26,14 +26,14 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.commons.io.VectorWritable;
-import org.apache.hama.commons.math.DenseDoubleVector;
+import org.apache.hama.commons.io.FloatVectorWritable;
+import org.apache.hama.commons.math.DenseFloatVector;
 
 public class MNISTConverter {
 
   private static int PIXELS = 28 * 28;
 
-  private static double rescale(double x) {
+  private static float rescale(float x) {
     return 1 - (255 - x) / 255;
   }
 
@@ -75,10 +75,10 @@ public class MNISTConverter {
 
     @SuppressWarnings("deprecation")
     SequenceFile.Writer writer = new SequenceFile.Writer(fs, conf, new Path(
-        output), LongWritable.class, VectorWritable.class);
+        output), LongWritable.class, FloatVectorWritable.class);
 
     for (int i = 0; i < count; i++) {
-      double[] vals = new double[PIXELS + 10];
+      float[] vals = new float[PIXELS + 10];
       for (int j = 0; j < PIXELS; j++) {
         vals[j] = rescale((images[i][j] & 0xff));
       }
@@ -86,13 +86,13 @@ public class MNISTConverter {
       // embedding to one-hot vector
       for (int j = 0; j < 10; j++) {
         if (j == label)
-          vals[PIXELS + j] = 1.0;
+          vals[PIXELS + j] = 1.0f;
         else
-          vals[PIXELS + j] = 0.0;
+          vals[PIXELS + j] = 0.0f;
       }
 
-      writer.append(new LongWritable(), new VectorWritable(
-          new DenseDoubleVector(vals)));
+      writer.append(new LongWritable(), new FloatVectorWritable(
+          new DenseFloatVector(vals)));
     }
 
     imagesIn.close();

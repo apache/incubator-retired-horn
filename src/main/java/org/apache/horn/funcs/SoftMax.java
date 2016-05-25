@@ -19,37 +19,38 @@ package org.apache.horn.funcs;
 
 import java.io.IOException;
 
-import org.apache.hama.commons.math.DenseDoubleVector;
-import org.apache.hama.commons.math.DoubleFunction;
+import org.apache.hama.commons.math.DenseFloatVector;
 import org.apache.hama.commons.math.DoubleVector;
+import org.apache.hama.commons.math.FloatFunction;
+import org.apache.hama.commons.math.FloatVector;
 import org.apache.horn.core.IntermediateOutput;
 
-public class SoftMax extends DoubleFunction {
+public class SoftMax extends FloatFunction {
 
   @Override
-  public double apply(double value) {
+  public float apply(float value) {
     // it will be handled by intermediate output handler
     return value;
   }
 
   @Override
-  public double applyDerivative(double value) {
-    return value * (1d - value);
+  public float applyDerivative(float value) {
+    return value * (1f - value);
   }
   
   public static class SoftMaxOutputComputer extends IntermediateOutput {
 
     @Override
-    public DoubleVector interlayer(DoubleVector output) throws IOException {
-      DoubleVector expVec = new DenseDoubleVector(output.getDimension());
-      double sum = 0.0;
+    public FloatVector interlayer(FloatVector output) throws IOException {
+      FloatVector expVec = new DenseFloatVector(output.getDimension());
+      float sum = 0.0f;
       for(int i = 0; i < output.getDimension(); ++i) {
-        double exp = Math.exp(output.get(i));
+        float exp = (float) Math.exp(output.get(i));
         sum += exp;
         expVec.set(i, exp);
       }
       // divide by the sum of exponential of the whole vector
-      DoubleVector softmaxed = expVec.divide(sum);
+      FloatVector softmaxed = expVec.divide(sum);
       return softmaxed;
     }
 

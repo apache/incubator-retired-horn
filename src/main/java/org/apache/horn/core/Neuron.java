@@ -22,21 +22,21 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 import org.apache.hadoop.io.Writable;
-import org.apache.hama.commons.math.DoubleFunction;
+import org.apache.hama.commons.math.FloatFunction;
 
 public abstract class Neuron<M extends Writable> implements Writable, NeuronInterface<M> {
   int id;
-  double output;
-  double weight;
-  double delta;
+  float output;
+  float weight;
+  float delta;
 
-  double momentumWeight;
-  double learningRate;
+  float momentumWeight;
+  float learningRate;
 
   int layerIndex;
   boolean isOutputLayer;
   
-  protected DoubleFunction squashingFunction;
+  protected FloatFunction squashingFunction;
 
   public void setNeuronID(int id) {
     this.id = id;
@@ -54,47 +54,47 @@ public abstract class Neuron<M extends Writable> implements Writable, NeuronInte
     this.layerIndex = index;
   }
   
-  public void feedforward(double sum) {
+  public void feedforward(float sum) {
     this.output = sum;
   }
 
-  public void backpropagate(double gradient) {
+  public void backpropagate(float gradient) {
     this.delta = gradient;
   }
 
-  public void setDelta(double delta) {
+  public void setDelta(float delta) {
     this.delta = delta;
   }
   
-  public double getDelta() {
+  public float getDelta() {
     return delta;
   }
 
-  public void setWeight(double weight) {
+  public void setWeight(float weight) {
     this.weight = weight;
   }
 
-  public void setOutput(double output) {
+  public void setOutput(float output) {
     this.output = output;
   }
 
-  public double getOutput() {
+  public float getOutput() {
     return output;
   }
 
-  public void setMomentumWeight(double momentumWeight) {
+  public void setMomentumWeight(float momentumWeight) {
     this.momentumWeight = momentumWeight;
   }
 
-  public double getMomentumWeight() {
+  public float getMomentumWeight() {
     return momentumWeight;
   }
 
-  public void setLearningRate(double learningRate) {
+  public void setLearningRate(float learningRate) {
     this.learningRate = learningRate;
   }
 
-  public double getLearningRate() {
+  public float getLearningRate() {
     return learningRate;
   }
 
@@ -102,49 +102,49 @@ public abstract class Neuron<M extends Writable> implements Writable, NeuronInte
 
   private int i;
 
-  public void push(double weight) {
+  public void push(float weight) {
     weights[i++] = weight;
   }
 
-  public double getUpdate() {
+  public float getUpdate() {
     return weight;
   }
 
-  double[] weights;
+  float[] weights;
 
   public void setWeightVector(int rowCount) {
     i = 0;
-    weights = new double[rowCount];
+    weights = new float[rowCount];
   }
 
-  public double[] getWeights() {
+  public float[] getWeights() {
     return weights;
   }
 
-  public void setSquashingFunction(DoubleFunction squashingFunction) {
+  public void setSquashingFunction(FloatFunction squashingFunction) {
     this.squashingFunction = squashingFunction;
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
     id = in.readInt();
-    output = in.readDouble();
-    weight = in.readDouble();
-    delta = in.readDouble();
+    output = in.readFloat();
+    weight = in.readFloat();
+    delta = in.readFloat();
 
-    momentumWeight = in.readDouble();
-    learningRate = in.readDouble();
+    momentumWeight = in.readFloat();
+    learningRate = in.readFloat();
   }
 
   @Override
   public void write(DataOutput out) throws IOException {
     out.writeInt(id);
-    out.writeDouble(output);
-    out.writeDouble(weight);
-    out.writeDouble(delta);
+    out.writeFloat(output);
+    out.writeFloat(weight);
+    out.writeFloat(delta);
     
-    out.writeDouble(momentumWeight);
-    out.writeDouble(learningRate);
+    out.writeFloat(momentumWeight);
+    out.writeFloat(learningRate);
   }
 
 }

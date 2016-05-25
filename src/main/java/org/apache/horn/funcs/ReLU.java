@@ -17,7 +17,7 @@
  */
 package org.apache.horn.funcs;
 
-import org.apache.hama.commons.math.DoubleFunction;
+import org.apache.hama.commons.math.FloatFunction;
 
 /**
  * The rectifier function
@@ -26,19 +26,19 @@ import org.apache.hama.commons.math.DoubleFunction;
  * f(x) = max(0, x)
  * </pre>
  */
-public class ReLU extends DoubleFunction {
+public class ReLU extends FloatFunction {
 
   @Override
-  public double apply(double value) {
-    return Math.max(0.001, value);
+  public float apply(float value) {
+    return Math.max(0.001f, value);
   }
 
   @Override
-  public double applyDerivative(double value) {
+  public float applyDerivative(float value) {
     if (value > 0)
-      return 0.999;
+      return 0.999f;
     else
-      return 0.001;
+      return 0.001f;
   }
 
 }

@@ -32,12 +32,12 @@ import org.apache.hadoop.io.SequenceFile;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaCluster;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.commons.io.VectorWritable;
-import org.apache.hama.commons.math.DenseDoubleVector;
-import org.apache.hama.commons.math.DoubleVector;
+import org.apache.hama.commons.io.FloatVectorWritable;
+import org.apache.hama.commons.math.DenseFloatVector;
+import org.apache.hama.commons.math.FloatVector;
+import org.apache.horn.core.Constants.TrainingMethod;
 import org.apache.horn.core.HornJob;
 import org.apache.horn.core.LayeredNeuralNetwork;
-import org.apache.horn.core.Constants.TrainingMethod;
 import org.apache.horn.examples.MultiLayerPerceptron.StandardNeuron;
 import org.apache.horn.funcs.CrossEntropy;
 import org.apache.horn.funcs.Sigmoid;
@@ -106,12 +106,12 @@ public class MultiLayerPerceptronTest extends HamaCluster {
           continue;
         }
         String[] tokens = line.trim().split(",");
-        double[] vals = new double[tokens.length];
+        float[] vals = new float[tokens.length];
         for (int i = 0; i < tokens.length; ++i) {
-          vals[i] = Double.parseDouble(tokens[i]);
+          vals[i] = Float.parseFloat(tokens[i]);
         }
-        DoubleVector instance = new DenseDoubleVector(vals);
-        DoubleVector result = ann.getOutput(instance);
+        FloatVector instance = new DenseFloatVector(vals);
+        FloatVector result = ann.getOutput(instance);
         double actual = result.toArray()[0];
         double expected = Double.parseDouble(groundTruthReader.readLine());
 
@@ -146,19 +146,19 @@ public class MultiLayerPerceptronTest extends HamaCluster {
     Path sequenceTrainingDataPath = new Path(SEQTRAIN_DATA);
     try {
       SequenceFile.Writer writer = new SequenceFile.Writer(fs, conf,
-          sequenceTrainingDataPath, LongWritable.class, VectorWritable.class);
+          sequenceTrainingDataPath, LongWritable.class, FloatVectorWritable.class);
       BufferedReader br = new BufferedReader(
           new FileReader(strTrainingDataPath));
       String line = null;
       // convert the data in sequence file format
       while ((line = br.readLine()) != null) {
         String[] tokens = line.split(",");
-        double[] vals = new double[tokens.length];
+        float[] vals = new float[tokens.length];
         for (int i = 0; i < tokens.length; ++i) {
-          vals[i] = Double.parseDouble(tokens[i]);
+          vals[i] = Float.parseFloat(tokens[i]);
         }
-        writer.append(new LongWritable(), new VectorWritable(
-            new DenseDoubleVector(vals)));
+        writer.append(new LongWritable(), new FloatVectorWritable(
+            new DenseFloatVector(vals)));
       }
       writer.close();
       br.close();
@@ -172,9 +172,9 @@ public class MultiLayerPerceptronTest extends HamaCluster {
       job.setModelPath(MODEL_PATH);
 
       job.setMaxIteration(1000);
-      job.setLearningRate(0.4);
-      job.setMomentumWeight(0.2);
-      job.setRegularizationWeight(0.001);
+      job.setLearningRate(0.4f);
+      job.setMomentumWeight(0.2f);
+      job.setRegularizationWeight(0.001f);
 
       job.setConvergenceCheckInterval(100);
       job.setBatchSize(300);

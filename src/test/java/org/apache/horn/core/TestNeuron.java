@@ -23,46 +23,46 @@ import java.util.List;
 
 import junit.framework.TestCase;
 
-import org.apache.hadoop.io.DoubleWritable;
+import org.apache.hadoop.io.FloatWritable;
 import org.apache.horn.funcs.CrossEntropy;
 import org.apache.horn.funcs.Sigmoid;
 
 public class TestNeuron extends TestCase {
-  private static double learningrate = 0.1;
-  private static double bias = -1;
-  private static double theta = 0.8;
+  private static float learningrate = 0.1f;
+  private static float bias = -1;
+  private static float theta = 0.8f;
 
   public static class MyNeuron extends
-      Neuron<Synapse<DoubleWritable, DoubleWritable>> {
+      Neuron<Synapse<FloatWritable, FloatWritable>> {
 
     @Override
     public void forward(
-        Iterable<Synapse<DoubleWritable, DoubleWritable>> messages)
+        Iterable<Synapse<FloatWritable, FloatWritable>> messages)
         throws IOException {
-      double sum = 0;
-      for (Synapse<DoubleWritable, DoubleWritable> m : messages) {
+      float sum = 0;
+      for (Synapse<FloatWritable, FloatWritable> m : messages) {
         sum += m.getInput() * m.getWeight();
       }
       sum += (bias * theta);
-      System.out.println(new CrossEntropy().apply(0.000001, 1.0));
+      System.out.println(new CrossEntropy().apply(0.000001f, 1.0f));
       this.feedforward(new Sigmoid().apply(sum));
     }
     
     @Override
     public void backward(
-        Iterable<Synapse<DoubleWritable, DoubleWritable>> messages)
+        Iterable<Synapse<FloatWritable, FloatWritable>> messages)
         throws IOException {
-      for (Synapse<DoubleWritable, DoubleWritable> m : messages) {
+      for (Synapse<FloatWritable, FloatWritable> m : messages) {
         // Calculates error gradient for each neuron
-        double gradient = new Sigmoid().applyDerivative(this.getOutput())
+        float gradient = new Sigmoid().applyDerivative(this.getOutput())
             * (m.getDelta() * m.getWeight());
 
         // Propagates to lower layer
         backpropagate(gradient);
 
         // Weight corrections
-        double weight = learningrate * this.getOutput() * m.getDelta();
-        assertEquals(-0.006688234848481696, weight);
+        float weight = learningrate * this.getOutput() * m.getDelta();
+        assertEquals(-0.006688235f, weight);
         // this.push(weight);
       }
     }
@@ -70,19 +70,19 @@ public class TestNeuron extends TestCase {
   }
 
   public void testProp() throws IOException {
-    List<Synapse<DoubleWritable, DoubleWritable>> x = new ArrayList<Synapse<DoubleWritable, DoubleWritable>>();
-    x.add(new Synapse<DoubleWritable, DoubleWritable>(new DoubleWritable(1.0),
-        new DoubleWritable(0.5)));
-    x.add(new Synapse<DoubleWritable, DoubleWritable>(new DoubleWritable(1.0),
-        new DoubleWritable(0.4)));
+    List<Synapse<FloatWritable, FloatWritable>> x = new ArrayList<Synapse<FloatWritable, FloatWritable>>();
+    x.add(new Synapse<FloatWritable, FloatWritable>(new FloatWritable(1.0f),
+        new FloatWritable(0.5f)));
+    x.add(new Synapse<FloatWritable, FloatWritable>(new FloatWritable(1.0f),
+        new FloatWritable(0.4f)));
 
     MyNeuron n = new MyNeuron();
     n.forward(x);
-    assertEquals(0.5249791874789399, n.getOutput());
+    assertEquals(0.5249792f, n.getOutput());
 
     x.clear();
-    x.add(new Synapse<DoubleWritable, DoubleWritable>(new DoubleWritable(
-        -0.1274), new DoubleWritable(-1.2)));
+    x.add(new Synapse<FloatWritable, FloatWritable>(new FloatWritable(
+        -0.1274f), new FloatWritable(-1.2f)));
     n.backward(x);
   }
 

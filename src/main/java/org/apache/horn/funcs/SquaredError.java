@@ -17,7 +17,7 @@
  */
 package org.apache.horn.funcs;
 
-import org.apache.hama.commons.math.DoubleDoubleFunction;
+import org.apache.hama.commons.math.FloatFloatFunction;
 
 /**
  * Square error cost function.
@@ -26,22 +26,22 @@ import org.apache.hama.commons.math.DoubleDoubleFunction;
  * cost(t, y) = 0.5 * (t - y) &circ; 2
  * </pre>
  */
-public class SquaredError extends DoubleDoubleFunction {
+public class SquaredError extends FloatFloatFunction {
 
   @Override
   /**
    * {@inheritDoc}
    */
-  public double apply(double target, double actual) {
-    double diff = target - actual;
-    return 0.5 * diff * diff;
+  public float apply(float target, float actual) {
+    float diff = target - actual;
+    return (0.5f * diff * diff);
   }
 
   @Override
   /**
    * {@inheritDoc}
    */
-  public double applyDerivative(double target, double actual) {
+  public float applyDerivative(float target, float actual) {
     return actual - target;
   }
 

@@ -8,10 +8,10 @@ Apache Horn provides a neuron-centric programming model for implementing the neu
 ```Java
     @Override
     public void forward(
-        Iterable<Synapse<DoubleWritable, DoubleWritable>> messages)
+        Iterable<Synapse<FloatWritable, FloatWritable>> messages)
         throws IOException {
-      double sum = 0;
-      for (Synapse<DoubleWritable, DoubleWritable> m : messages) {
+      float sum = 0;
+      for (Synapse<FloatWritable, FloatWritable> m : messages) {
         sum += m.getInput() * m.getWeight();
       }
       this.feedforward(this.squashingFunction.apply(sum));
@@ -21,15 +21,15 @@ Then, we measure the margin of error of the output and adjust the weights accord
 ```Java
     @Override
     public void backward(
-        Iterable<Synapse<DoubleWritable, DoubleWritable>> messages)
+        Iterable<Synapse<FloatWritable, FloatWritable>> messages)
         throws IOException {
-      double gradient = 0;
-      for (Synapse<DoubleWritable, DoubleWritable> m : messages) {
+      float gradient = 0;
+      for (Synapse<FloatWritable, FloatWritable> m : messages) {
         // Calculates error gradient for each neuron
-        double gradient += (m.getDelta() * m.getWeight());
+        gradient += (m.getDelta() * m.getWeight());
 
         // Weight corrections
-        double weight = -this.getLearningRate() * this.getOutput()
+        float weight = -this.getLearningRate() * this.getOutput()
             * m.getDelta() + this.getMomentumWeight() * m.getPrevWeight();
         this.push(weight);
       }
@@ -68,7 +68,7 @@ Then, train it with following command (in this example, we used η 0.01, α 0.9,
    0.01 0.9 0.0005 784 100 10 10 12000
 ```
 
-With this default example, you'll reach over the 95% accuracy. The local-mode parallel synchronous SGD based on multithreading will took around 30 mins ~ 1 hour to train. 
+With this default example, you'll reach over the 95% accuracy. In local mode, 6 tasks will train the model in synchronous parallel fashion and will took around 30 mins. 
 
 ## High Scalability
 

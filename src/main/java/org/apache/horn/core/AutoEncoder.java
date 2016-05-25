@@ -23,11 +23,10 @@ import java.util.Map;
 import org.apache.hadoop.fs.Path;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPJob;
-import org.apache.hama.commons.math.DenseDoubleVector;
-import org.apache.hama.commons.math.DoubleFunction;
-import org.apache.hama.commons.math.DoubleMatrix;
-import org.apache.hama.commons.math.DoubleVector;
-import org.apache.hama.ml.util.FeatureTransformer;
+import org.apache.hama.commons.math.DenseFloatVector;
+import org.apache.hama.commons.math.FloatFunction;
+import org.apache.hama.commons.math.FloatMatrix;
+import org.apache.hama.commons.math.FloatVector;
 import org.apache.horn.core.Constants.LearningStyle;
 import org.apache.horn.funcs.FunctionFactory;
 
@@ -54,15 +53,15 @@ public class AutoEncoder {
   public AutoEncoder(int inputDimensions, int compressedDimensions) {
     model = new LayeredNeuralNetwork();
     model.addLayer(inputDimensions, false,
-        FunctionFactory.createDoubleFunction("Sigmoid"), null);
+        FunctionFactory.createFloatFunction("Sigmoid"), null);
     model.addLayer(compressedDimensions, false,
-        FunctionFactory.createDoubleFunction("Sigmoid"), null);
+        FunctionFactory.createFloatFunction("Sigmoid"), null);
     model.addLayer(inputDimensions, true,
-        FunctionFactory.createDoubleFunction("Sigmoid"), null);
+        FunctionFactory.createFloatFunction("Sigmoid"), null);
     model
         .setLearningStyle(LearningStyle.UNSUPERVISED);
     model.setCostFunction(FunctionFactory
-        .createDoubleDoubleFunction("SquaredError"));
+        .createFloatFloatFunction("SquaredError"));
   }
 
   public AutoEncoder(HamaConfiguration conf, String modelPath) {
@@ -94,7 +93,7 @@ public class AutoEncoder {
    * 
    * @param trainingInstance
    */
-  public void trainOnline(DoubleVector trainingInstance) {
+  public void trainOnline(FloatVector trainingInstance) {
     model.trainOnline(trainingInstance);
   }
 
@@ -103,7 +102,7 @@ public class AutoEncoder {
    * 
    * @return this matrix with encode the input.
    */
-  public DoubleMatrix getEncodeWeightMatrix() {
+  public FloatMatrix getEncodeWeightMatrix() {
     return model.getWeightsByLayer(0);
   }
 
@@ -112,7 +111,7 @@ public class AutoEncoder {
    * 
    * @return this matrix with decode the compressed information.
    */
-  public DoubleMatrix getDecodeWeightMatrix() {
+  public FloatMatrix getDecodeWeightMatrix() {
     return model.getWeightsByLayer(1);
   }
 
@@ -122,21 +121,21 @@ public class AutoEncoder {
    * @param inputInstance
    * @return The compressed information.
    */
-  private DoubleVector transform(DoubleVector inputInstance, int inputLayer) {
-    DoubleVector internalInstance = new DenseDoubleVector(
+  private FloatVector transform(FloatVector inputInstance, int inputLayer) {
+    FloatVector internalInstance = new DenseFloatVector(
         inputInstance.getDimension() + 1);
     internalInstance.set(0, 1);
     for (int i = 0; i < inputInstance.getDimension(); ++i) {
       internalInstance.set(i + 1, inputInstance.get(i));
     }
-    DoubleFunction squashingFunction = model.getSquashingFunction(inputLayer);
-    DoubleMatrix weightMatrix = null;
+    FloatFunction squashingFunction = model.getSquashingFunction(inputLayer);
+    FloatMatrix weightMatrix = null;
     if (inputLayer == 0) {
       weightMatrix = this.getEncodeWeightMatrix();
     } else {
       weightMatrix = this.getDecodeWeightMatrix();
     }
-    DoubleVector vec = weightMatrix.multiplyVectorUnsafe(internalInstance);
+    FloatVector vec = weightMatrix.multiplyVectorUnsafe(internalInstance);
     vec = vec.applyToElements(squashingFunction);
     return vec;
   }
@@ -147,7 +146,7 @@ public class AutoEncoder {
    * @param inputInstance
    * @return a new vector with the encode input instance.
    */
-  public DoubleVector encode(DoubleVector inputInstance) {
+  public FloatVector encode(FloatVector inputInstance) {
     Preconditions
         .checkArgument(
             inputInstance.getDimension() == model.getLayerSize(0) - 1,
@@ -164,7 +163,7 @@ public class AutoEncoder {
    * @param inputInstance
    * @return a new vector with the decode input instance.
    */
-  public DoubleVector decode(DoubleVector inputInstance) {
+  public FloatVector decode(FloatVector inputInstance) {
     Preconditions
         .checkArgument(
             inputInstance.getDimension() == model.getLayerSize(1) - 1,
@@ -182,7 +181,7 @@ public class AutoEncoder {
    * @return a new vector with output of the model according to given feature
    *         instance.
    */
-  public DoubleVector getOutput(DoubleVector inputInstance) {
+  public FloatVector getOutput(FloatVector inputInstance) {
     return model.getOutput(inputInstance);
   }
 
@@ -191,7 +190,7 @@ public class AutoEncoder {
    * 
    * @param featureTransformer
    */
-  public void setFeatureTransformer(FeatureTransformer featureTransformer) {
+  public void setFeatureTransformer(FloatFeatureTransformer featureTransformer) {
     this.model.setFeatureTransformer(featureTransformer);
   }
 

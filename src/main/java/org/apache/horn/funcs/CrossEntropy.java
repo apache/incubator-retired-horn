@@ -17,7 +17,7 @@
  */
 package org.apache.horn.funcs;
 
-import org.apache.hama.commons.math.DoubleDoubleFunction;
+import org.apache.hama.commons.math.FloatFloatFunction;
 
 /**
  * The cross entropy cost function.
@@ -27,29 +27,23 @@ import org.apache.hama.commons.math.DoubleDoubleFunction;
  * where t denotes the target value, y denotes the estimated value.
  * </pre>
  */
-public class CrossEntropy extends DoubleDoubleFunction {
+public class CrossEntropy extends FloatFloatFunction {
 
-  private static final double epsilon = 1e-8;
-  
+  private static final float epsilon = 1e-8f;
+
   @Override
-  public double apply(double target, double actual) {
-    double adjustedTarget = (target == 0 ? 0.000001 : target);
-    adjustedTarget = (target == 1.0 ? 0.999999 : adjustedTarget);
-    double adjustedActual = (actual == 0 ? 0.000001 : actual);
-    adjustedActual = (actual == 1 ? 0.999999 : adjustedActual);
-    
-    return -target * Math.log(Math.max(actual, epsilon)) - (1 - target)
-        * Math.log(Math.max(1 - actual, epsilon));
-    // return -adjustedTarget * Math.log(adjustedActual) - (1 - adjustedTarget) *  Math.log(adjustedActual);
+  public float apply(float target, float actual) {
+    return -target * (float) Math.log(Math.max(actual, epsilon)) - (1 - target)
+        * (float) Math.log(Math.max(1 - actual, epsilon));
   }
-  
+
   @Override
-  public double applyDerivative(double target, double actual) {
-    double adjustedTarget = (target == 0 ? 0.000001 : target);
-    adjustedTarget = (target == 1.0 ? 0.999999 : adjustedTarget);
-    double adjustedActual = (actual == 0 ? 0.000001 : actual);
-    adjustedActual = (actual == 1 ? 0.999999 : adjustedActual);
-    
+  public float applyDerivative(float target, float actual) {
+    float adjustedTarget = (target == 0 ? 0.000001f : target);
+    adjustedTarget = (target == 1.0 ? 0.999999f : adjustedTarget);
+    float adjustedActual = (actual == 0 ? 0.000001f : actual);
+    adjustedActual = (actual == 1 ? 0.999999f : adjustedActual);
+
     return -adjustedTarget / adjustedActual + (1 - adjustedTarget)
         / (1 - adjustedActual);
   }

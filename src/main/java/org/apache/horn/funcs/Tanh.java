@@ -17,22 +17,22 @@
  */
 package org.apache.horn.funcs;
 
-import org.apache.hama.commons.math.DoubleFunction;
+import org.apache.hama.commons.math.FloatFunction;
 
 /**
  * Tanh function.
  * 
  */
-public class Tanh extends DoubleFunction {
+public class Tanh extends FloatFunction {
 
   @Override
-  public double apply(double value) {
-    return Math.tanh(value);
+  public float apply(float value) {
+    return (float) Math.tanh(value);
   }
 
   @Override
-  public double applyDerivative(double value) {
-    return 1 - Math.pow(Math.tanh(value), 2);
+  public float applyDerivative(float value) {
+    return (float) (1 - Math.pow(Math.tanh(value), 2));
   }
   
 }

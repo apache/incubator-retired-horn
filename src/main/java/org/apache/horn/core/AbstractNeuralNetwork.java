@@ -35,8 +35,6 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPJob;
-import org.apache.hama.ml.util.DefaultFeatureTransformer;
-import org.apache.hama.ml.util.FeatureTransformer;
 
 import com.google.common.base.Preconditions;
 import com.google.common.io.Closeables;
@@ -52,10 +50,10 @@ public abstract class AbstractNeuralNetwork implements Writable {
 
   protected HamaConfiguration conf;
   protected FileSystem fs;
-  
-  private static final double DEFAULT_LEARNING_RATE = 0.5;
 
-  protected double learningRate;
+  private static final float DEFAULT_LEARNING_RATE = 0.5f;
+
+  protected float learningRate;
   protected boolean learningRateDecay = false;
 
   // the name of the model
@@ -63,12 +61,12 @@ public abstract class AbstractNeuralNetwork implements Writable {
   // the path to store the model
   protected String modelPath;
 
-  protected FeatureTransformer featureTransformer;
+  protected FloatFeatureTransformer featureTransformer;
 
   public AbstractNeuralNetwork() {
     this.learningRate = DEFAULT_LEARNING_RATE;
     this.modelType = this.getClass().getSimpleName();
-    this.featureTransformer = new DefaultFeatureTransformer();
+    this.featureTransformer = new FloatFeatureTransformer();
   }
 
   public AbstractNeuralNetwork(HamaConfiguration conf, String modelPath) {
@@ -88,13 +86,13 @@ public abstract class AbstractNeuralNetwork implements Writable {
    * 
    * @param learningRate
    */
-  public void setLearningRate(double learningRate) {
+  public void setLearningRate(float learningRate) {
     Preconditions.checkArgument(learningRate > 0,
         "Learning rate must be larger than 0.");
     this.learningRate = learningRate;
   }
 
-  public double getLearningRate() {
+  public float getLearningRate() {
     return this.learningRate;
   }
 
@@ -111,15 +109,16 @@ public abstract class AbstractNeuralNetwork implements Writable {
    * 
    * @param dataInputPath The path of the training data.
    * @param trainingParams The parameters for training.
-   * @throws InterruptedException 
-   * @throws ClassNotFoundException 
+   * @throws InterruptedException
+   * @throws ClassNotFoundException
    * @throws IOException
    */
-  public BSPJob train(HamaConfiguration conf) throws ClassNotFoundException, IOException, InterruptedException {
+  public BSPJob train(HamaConfiguration conf) throws ClassNotFoundException,
+      IOException, InterruptedException {
     Preconditions.checkArgument(this.modelPath != null,
         "Please set the model path before training.");
     // train with BSP job
-      return trainInternal(conf);
+    return trainInternal(conf);
   }
 
   /**
@@ -128,8 +127,8 @@ public abstract class AbstractNeuralNetwork implements Writable {
    * @param dataInputPath
    * @param trainingParams
    */
-  protected abstract BSPJob trainInternal(HamaConfiguration conf) throws IOException,
-      InterruptedException, ClassNotFoundException;
+  protected abstract BSPJob trainInternal(HamaConfiguration conf)
+      throws IOException, InterruptedException, ClassNotFoundException;
 
   /**
    * Read the model meta-data from the specified location.
@@ -199,7 +198,7 @@ public abstract class AbstractNeuralNetwork implements Writable {
     // read model type
     this.modelType = WritableUtils.readString(input);
     // read learning rate
-    this.learningRate = input.readDouble();
+    this.learningRate = input.readFloat();
     // read model path
     this.modelPath = WritableUtils.readString(input);
 
@@ -214,7 +213,7 @@ public abstract class AbstractNeuralNetwork implements Writable {
       featureTransformerBytes[i] = input.readByte();
     }
 
-    Class<? extends FeatureTransformer> featureTransformerCls = (Class<? extends FeatureTransformer>) SerializationUtils
+    Class<? extends FloatFeatureTransformer> featureTransformerCls = (Class<? extends FloatFeatureTransformer>) SerializationUtils
         .deserialize(featureTransformerBytes);
 
     Constructor[] constructors = featureTransformerCls
@@ -222,7 +221,7 @@ public abstract class AbstractNeuralNetwork implements Writable {
     Constructor constructor = constructors[0];
 
     try {
-      this.featureTransformer = (FeatureTransformer) constructor
+      this.featureTransformer = (FloatFeatureTransformer) constructor
           .newInstance(new Object[] {});
     } catch (InstantiationException e) {
       e.printStackTrace();
@@ -240,7 +239,7 @@ public abstract class AbstractNeuralNetwork implements Writable {
     // write model type
     WritableUtils.writeString(output, modelType);
     // write learning rate
-    output.writeDouble(learningRate);
+    output.writeFloat(learningRate);
     // write model path
     if (this.modelPath != null) {
       WritableUtils.writeString(output, modelPath);
@@ -249,7 +248,7 @@ public abstract class AbstractNeuralNetwork implements Writable {
     }
 
     // serialize the class
-    Class<? extends FeatureTransformer> featureTransformerCls = this.featureTransformer
+    Class<? extends FloatFeatureTransformer> featureTransformerCls = this.featureTransformer
         .getClass();
     byte[] featureTransformerBytes = SerializationUtils
         .serialize(featureTransformerCls);
@@ -257,11 +256,11 @@ public abstract class AbstractNeuralNetwork implements Writable {
     output.write(featureTransformerBytes);
   }
 
-  public void setFeatureTransformer(FeatureTransformer featureTransformer) {
+  public void setFeatureTransformer(FloatFeatureTransformer featureTransformer) {
     this.featureTransformer = featureTransformer;
   }
 
-  public FeatureTransformer getFeatureTransformer() {
+  public FloatFeatureTransformer getFeatureTransformer() {
     return this.featureTransformer;
   }
 

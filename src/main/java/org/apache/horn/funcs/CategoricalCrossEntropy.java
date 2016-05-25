@@ -17,22 +17,22 @@
  */
 package org.apache.horn.funcs;
 
-import org.apache.hama.commons.math.DoubleDoubleFunction;
+import org.apache.hama.commons.math.FloatFloatFunction;
 
 /**
  * for softmaxed output 
  */
-public class CategoricalCrossEntropy extends DoubleDoubleFunction {
+public class CategoricalCrossEntropy extends FloatFloatFunction {
   
-  private static final double epsilon = 1e-8;
+  private static final float epsilon = (float) 1e-8;
   
   @Override
-  public double apply(double target, double actual) {
-    return -target * Math.log(Math.max(actual, epsilon));
+  public float apply(float target, float actual) {
+    return -target * (float) Math.log(Math.max(actual, epsilon));
   }
 
   @Override
-  public double applyDerivative(double target, double actual) {
+  public float applyDerivative(float target, float actual) {
     // o - y
     return -(target - actual);
   }

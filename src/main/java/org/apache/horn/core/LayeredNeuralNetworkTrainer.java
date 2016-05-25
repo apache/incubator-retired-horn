@@ -30,10 +30,10 @@ import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.sync.SyncException;
-import org.apache.hama.commons.io.VectorWritable;
-import org.apache.hama.commons.math.DenseDoubleMatrix;
-import org.apache.hama.commons.math.DoubleMatrix;
-import org.apache.hama.commons.math.DoubleVector;
+import org.apache.hama.commons.io.FloatVectorWritable;
+import org.apache.hama.commons.math.DenseFloatMatrix;
+import org.apache.hama.commons.math.FloatMatrix;
+import org.apache.hama.commons.math.FloatVector;
 
 /**
  * The trainer that train the {@link LayeredNeuralNetwork} based on BSP
@@ -42,7 +42,7 @@ import org.apache.hama.commons.math.DoubleVector;
  */
 public final class LayeredNeuralNetworkTrainer
     extends
-    BSP<LongWritable, VectorWritable, NullWritable, NullWritable, ParameterMessage> {
+    BSP<LongWritable, FloatVectorWritable, NullWritable, NullWritable, ParameterMessage> {
 
   private static final Log LOG = LogFactory
       .getLog(LayeredNeuralNetworkTrainer.class);
@@ -58,7 +58,6 @@ public final class LayeredNeuralNetworkTrainer
   private long convergenceCheckInterval;
   private long iterations;
   private long maxIterations;
-  private long epoch;
   private boolean isConverge;
 
   private String modelPath;
@@ -68,16 +67,15 @@ public final class LayeredNeuralNetworkTrainer
    * If the model path is specified, load the existing from storage location.
    */
   public void setup(
-      BSPPeer<LongWritable, VectorWritable, NullWritable, NullWritable, ParameterMessage> peer) {
+      BSPPeer<LongWritable, FloatVectorWritable, NullWritable, NullWritable, ParameterMessage> peer) {
     if (peer.getPeerIndex() == 0) {
       LOG.info("Begin to train");
     }
     this.isConverge = false;
     this.conf = peer.getConfiguration();
     this.iterations = 0;
-    this.epoch = 0;
     this.modelPath = conf.get("model.path");
-    this.maxIterations = conf.getLong("training.max.iterations", 100000);
+    this.maxIterations = conf.getLong("training.max.iterations", Long.MAX_VALUE);
     this.convergenceCheckInterval = conf.getLong("convergence.check.interval",
         100);
     this.inMemoryModel = new LayeredNeuralNetwork(conf, modelPath);
@@ -90,9 +88,9 @@ public final class LayeredNeuralNetworkTrainer
    * Write the trained model back to stored location.
    */
   public void cleanup(
-      BSPPeer<LongWritable, VectorWritable, NullWritable, NullWritable, ParameterMessage> peer) {
+      BSPPeer<LongWritable, FloatVectorWritable, NullWritable, NullWritable, ParameterMessage> peer) {
     // write model to modelPath
-    if (peer.getPeerIndex() == 0) {
+    if (peer.getPeerIndex() == peer.getNumPeers() - 1) {
       try {
         LOG.info(String.format("End of training, number of iterations: %d.",
             this.iterations));
@@ -105,18 +103,18 @@ public final class LayeredNeuralNetworkTrainer
     }
   }
 
-  private List<DoubleVector> trainingSet = new ArrayList<DoubleVector>();
+  private List<FloatVector> trainingSet = new ArrayList<FloatVector>();
   private Random r = new Random();
 
   @Override
   public void bsp(
-      BSPPeer<LongWritable, VectorWritable, NullWritable, NullWritable, ParameterMessage> peer)
+      BSPPeer<LongWritable, FloatVectorWritable, NullWritable, NullWritable, ParameterMessage> peer)
       throws IOException, SyncException, InterruptedException {
     // load local data into memory
     LongWritable key = new LongWritable();
-    VectorWritable value = new VectorWritable();
+    FloatVectorWritable value = new FloatVectorWritable();
     while (peer.readNext(key, value)) {
-      DoubleVector v = value.getVector();
+      FloatVector v = value.getVector();
       trainingSet.add(v);
     }
 
@@ -131,18 +129,22 @@ public final class LayeredNeuralNetworkTrainer
           mergeUpdates(peer);
         }
       }
-      
+
       peer.sync();
-      
-      if(isConverge) {
-        if(peer.getPeerIndex() == peer.getNumPeers() - 1)
+
+      if (maxIterations == Long.MAX_VALUE && isConverge) {
+        if (peer.getPeerIndex() == peer.getNumPeers() - 1)
           peer.sync();
         break;
       }
     }
+
+    peer.sync();
+    if (peer.getPeerIndex() == peer.getNumPeers() - 1)
+      mergeUpdates(peer); // merge last updates
   }
 
-  private DoubleVector getRandomInstance() {
+  private FloatVector getRandomInstance() {
     return trainingSet.get(r.nextInt(trainingSet.size()));
   }
 
@@ -153,13 +155,13 @@ public final class LayeredNeuralNetworkTrainer
    * @throws IOException
    */
   private void calculateUpdates(
-      BSPPeer<LongWritable, VectorWritable, NullWritable, NullWritable, ParameterMessage> peer)
+      BSPPeer<LongWritable, FloatVectorWritable, NullWritable, NullWritable, ParameterMessage> peer)
       throws IOException {
     // receive update information from master
     if (peer.getNumCurrentMessages() != 0) {
       ParameterMessage inMessage = peer.getCurrentMessage();
-      DoubleMatrix[] newWeights = inMessage.getCurMatrices();
-      DoubleMatrix[] preWeightUpdates = inMessage.getPrevMatrices();
+      FloatMatrix[] newWeights = inMessage.getCurMatrices();
+      FloatMatrix[] preWeightUpdates = inMessage.getPrevMatrices();
       this.inMemoryModel.setWeightMatrices(newWeights);
       this.inMemoryModel.setPrevWeightMatrices(preWeightUpdates);
       this.isConverge = inMessage.isConverge();
@@ -169,18 +171,19 @@ public final class LayeredNeuralNetworkTrainer
       }
     }
 
-    DoubleMatrix[] weightUpdates = new DoubleMatrix[this.inMemoryModel.weightMatrixList
+    FloatMatrix[] weightUpdates = new FloatMatrix[this.inMemoryModel.weightMatrixList
         .size()];
     for (int i = 0; i < weightUpdates.length; ++i) {
       int row = this.inMemoryModel.weightMatrixList.get(i).getRowCount();
       int col = this.inMemoryModel.weightMatrixList.get(i).getColumnCount();
-      weightUpdates[i] = new DenseDoubleMatrix(row, col);
+      weightUpdates[i] = new DenseFloatMatrix(row, col);
     }
 
     // continue to train
-    double avgTrainingError = 0.0;
+    float avgTrainingError = 0.0f;
     for (int recordsRead = 0; recordsRead < batchSize; ++recordsRead) {
-      DoubleVector trainingInstance = getRandomInstance();
+      FloatVector trainingInstance = getRandomInstance();
+
       LayeredNeuralNetwork.matricesAdd(weightUpdates,
           this.inMemoryModel.trainByInstance(trainingInstance));
       avgTrainingError += this.inMemoryModel.trainingError;
@@ -192,7 +195,7 @@ public final class LayeredNeuralNetworkTrainer
       weightUpdates[i] = weightUpdates[i].divide(batchSize);
     }
 
-    DoubleMatrix[] prevWeightUpdates = this.inMemoryModel
+    FloatMatrix[] prevWeightUpdates = this.inMemoryModel
         .getPrevMatricesUpdates();
     ParameterMessage outMessage = new ParameterMessage(avgTrainingError, false,
         weightUpdates, prevWeightUpdates);
@@ -206,7 +209,7 @@ public final class LayeredNeuralNetworkTrainer
    * @throws IOException
    */
   private void mergeUpdates(
-      BSPPeer<LongWritable, VectorWritable, NullWritable, NullWritable, ParameterMessage> peer)
+      BSPPeer<LongWritable, FloatVectorWritable, NullWritable, NullWritable, ParameterMessage> peer)
       throws IOException {
     int numMessages = peer.getNumCurrentMessages();
     boolean converge = false;
@@ -216,8 +219,8 @@ public final class LayeredNeuralNetworkTrainer
     }
 
     double avgTrainingError = 0;
-    DoubleMatrix[] matricesUpdates = null;
-    DoubleMatrix[] prevMatricesUpdates = null;
+    FloatMatrix[] matricesUpdates = null;
+    FloatMatrix[] prevMatricesUpdates = null;
 
     while (peer.getNumCurrentMessages() > 0) {
       ParameterMessage message = peer.getCurrentMessage();
@@ -260,14 +263,16 @@ public final class LayeredNeuralNetworkTrainer
     }
     curAvgTrainingError += avgTrainingError / convergenceCheckInterval;
     this.isConverge = converge;
-    
-    // broadcast updated weight matrices
-    for (String peerName : peer.getAllPeerNames()) {
-      ParameterMessage msg = new ParameterMessage(0, converge,
-          this.inMemoryModel.getWeightMatrices(),
-          this.inMemoryModel.getPrevMatricesUpdates());
-      if (!peer.getPeerName().equals(peerName))
-        peer.send(peerName, msg);
+
+    if (iterations < maxIterations) {
+      // broadcast updated weight matrices
+      for (String peerName : peer.getAllPeerNames()) {
+        ParameterMessage msg = new ParameterMessage(0, converge,
+            this.inMemoryModel.getWeightMatrices(),
+            this.inMemoryModel.getPrevMatricesUpdates());
+        if (!peer.getPeerName().equals(peerName))
+          peer.send(peerName, msg);
+      }
     }
   }
 

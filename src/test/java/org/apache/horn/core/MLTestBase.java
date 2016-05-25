@@ -31,16 +31,16 @@ public abstract class MLTestBase {
    * 
    * @param instances
    */
-  protected static void zeroOneNormalization(List<double[]> instanceList,
+  protected static void zeroOneNormalization(List<float[]> instanceList,
       int len) {
     int dimension = len;
 
-    double[] mins = new double[dimension];
-    double[] maxs = new double[dimension];
-    Arrays.fill(mins, Double.MAX_VALUE);
-    Arrays.fill(maxs, Double.MIN_VALUE);
+    float[] mins = new float[dimension];
+    float[] maxs = new float[dimension];
+    Arrays.fill(mins, Float.MAX_VALUE);
+    Arrays.fill(maxs, Float.MIN_VALUE);
 
-    for (double[] instance : instanceList) {
+    for (float[] instance : instanceList) {
       for (int i = 0; i < len; ++i) {
         if (mins[i] > instance[i]) {
           mins[i] = instance[i];
@@ -51,9 +51,9 @@ public abstract class MLTestBase {
       }
     }
 
-    for (double[] instance : instanceList) {
+    for (float[] instance : instanceList) {
       for (int i = 0; i < len; ++i) {
-        double range = maxs[i] - mins[i];
+        float range = maxs[i] - mins[i];
         if (range != 0) {
           instance[i] = (instance[i] - mins[i]) / range;
         }

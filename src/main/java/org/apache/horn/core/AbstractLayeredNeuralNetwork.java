@@ -24,10 +24,10 @@ import java.util.List;
 
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.commons.math.DoubleDoubleFunction;
-import org.apache.hama.commons.math.DoubleFunction;
-import org.apache.hama.commons.math.DoubleMatrix;
-import org.apache.hama.commons.math.DoubleVector;
+import org.apache.hama.commons.math.FloatFloatFunction;
+import org.apache.hama.commons.math.FloatFunction;
+import org.apache.hama.commons.math.FloatMatrix;
+import org.apache.hama.commons.math.FloatVector;
 import org.apache.horn.core.Constants.LearningStyle;
 import org.apache.horn.core.Constants.TrainingMethod;
 import org.apache.horn.funcs.CategoricalCrossEntropy;
@@ -49,19 +49,19 @@ import com.google.common.collect.Lists;
  */
 abstract class AbstractLayeredNeuralNetwork extends AbstractNeuralNetwork {
 
-  private static final double DEFAULT_REGULARIZATION_WEIGHT = 0;
-  private static final double DEFAULT_MOMENTUM_WEIGHT = 0.1;
+  private static final float DEFAULT_REGULARIZATION_WEIGHT = 0;
+  private static final float DEFAULT_MOMENTUM_WEIGHT = 0.1f;
 
-  double trainingError;
+  float trainingError;
 
   /* The weight of regularization */
-  protected double regularizationWeight;
+  protected float regularizationWeight;
 
   /* The momentumWeight */
-  protected double momentumWeight;
+  protected float momentumWeight;
 
   /* The cost function of the model */
-  protected DoubleDoubleFunction costFunction;
+  protected FloatFloatFunction costFunction;
 
   /* Record the size of each layer */
   protected List<Integer> layerSizeList;
@@ -92,14 +92,14 @@ abstract class AbstractLayeredNeuralNetwork extends AbstractNeuralNetwork {
    * 
    * @param regularizationWeight
    */
-  public void setRegularizationWeight(double regularizationWeight) {
+  public void setRegularizationWeight(float regularizationWeight) {
     Preconditions.checkArgument(regularizationWeight >= 0
         && regularizationWeight < 1.0,
         "Regularization weight must be in range [0, 1.0)");
     this.regularizationWeight = regularizationWeight;
   }
 
-  public double getRegularizationWeight() {
+  public float getRegularizationWeight() {
     return this.regularizationWeight;
   }
 
@@ -108,13 +108,13 @@ abstract class AbstractLayeredNeuralNetwork extends AbstractNeuralNetwork {
    * 
    * @param momentumWeight
    */
-  public void setMomemtumWeight(double momentumWeight) {
+  public void setMomemtumWeight(float momentumWeight) {
     Preconditions.checkArgument(momentumWeight >= 0 && momentumWeight <= 1.0,
         "Momentum weight must be in range [0, 1.0]");
     this.momentumWeight = momentumWeight;
   }
 
-  public double getMomemtumWeight() {
+  public float getMomemtumWeight() {
     return this.momentumWeight;
   }
 
@@ -139,7 +139,7 @@ abstract class AbstractLayeredNeuralNetwork extends AbstractNeuralNetwork {
    * 
    * @param costFunction
    */
-  public void setCostFunction(DoubleDoubleFunction costFunction) {
+  public void setCostFunction(FloatFloatFunction costFunction) {
     this.costFunction = costFunction;
   }
 
@@ -155,7 +155,7 @@ abstract class AbstractLayeredNeuralNetwork extends AbstractNeuralNetwork {
    * @return The layer index, starts with 0.
    */
   public abstract int addLayer(int size, boolean isFinalLayer,
-      DoubleFunction squashingFunction, Class<? extends Neuron> neuronClass);
+      FloatFunction squashingFunction, Class<? extends Neuron> neuronClass);
 
   /**
    * Get the size of a particular layer.
@@ -184,9 +184,9 @@ abstract class AbstractLayeredNeuralNetwork extends AbstractNeuralNetwork {
    * Get the weights between layer layerIdx and layerIdx + 1
    * 
    * @param layerIdx The index of the layer
-   * @return The weights in form of {@link DoubleMatrix}
+   * @return The weights in form of {@link floatMatrix}
    */
-  public abstract DoubleMatrix getWeightsByLayer(int layerIdx);
+  public abstract FloatMatrix getWeightsByLayer(int layerIdx);
 
   /**
    * Get the updated weights using one training instance.
@@ -196,7 +196,7 @@ abstract class AbstractLayeredNeuralNetwork extends AbstractNeuralNetwork {
    * @return The update of each weight, in form of matrix list.
    * @throws Exception
    */
-  public abstract DoubleMatrix[] trainByInstance(DoubleVector trainingInstance);
+  public abstract FloatMatrix[] trainByInstance(FloatVector trainingInstance);
 
   /**
    * Get the output calculated by the model.
@@ -204,7 +204,7 @@ abstract class AbstractLayeredNeuralNetwork extends AbstractNeuralNetwork {
    * @param instance The feature instance.
    * @return a new vector with the result of the operation.
    */
-  public abstract DoubleVector getOutput(DoubleVector instance);
+  public abstract FloatVector getOutput(FloatVector instance);
 
   /**
    * Calculate the training error based on the labels and outputs.
@@ -212,20 +212,20 @@ abstract class AbstractLayeredNeuralNetwork extends AbstractNeuralNetwork {
    * @param labels
    * @param output
    */
-  protected abstract void calculateTrainingError(DoubleVector labels,
-      DoubleVector output);
+  protected abstract void calculateTrainingError(FloatVector labels,
+      FloatVector output);
 
   @Override
   public void readFields(DataInput input) throws IOException {
     super.readFields(input);
     // read regularization weight
-    this.regularizationWeight = input.readDouble();
+    this.regularizationWeight = input.readFloat();
     // read momentum weight
-    this.momentumWeight = input.readDouble();
+    this.momentumWeight = input.readFloat();
 
     // read cost function
     this.costFunction = FunctionFactory
-        .createDoubleDoubleFunction(WritableUtils.readString(input));
+        .createFloatFloatFunction(WritableUtils.readString(input));
 
     // read layer size list
     int numLayers = input.readInt();
@@ -242,9 +242,9 @@ abstract class AbstractLayeredNeuralNetwork extends AbstractNeuralNetwork {
   public void write(DataOutput output) throws IOException {
     super.write(output);
     // write regularization weight
-    output.writeDouble(this.regularizationWeight);
+    output.writeFloat(this.regularizationWeight);
     // write momentum weight
-    output.writeDouble(this.momentumWeight);
+    output.writeFloat(this.momentumWeight);
 
     // write cost function
     WritableUtils.writeString(output, costFunction.getFunctionName());

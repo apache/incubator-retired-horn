@@ -22,9 +22,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hama.commons.math.DoubleMatrix;
-
-import com.google.common.base.Preconditions;
 
 public class ParameterMergerServer implements ParameterMerger {
 
@@ -76,9 +73,8 @@ public class ParameterMergerServer implements ParameterMerger {
   }
 
   @Override
-  public ParameterMessage merge(
-      ParameterMessage msg) {
-
+  public ParameterMessage merge(ParameterMessage msg) {
+/*
     double trainingError = msg.getTrainingError();
     DoubleMatrix[] weightUpdates = msg.getCurMatrices();
     DoubleMatrix[] prevWeightUpdates = msg.getPrevMatrices();
@@ -127,6 +123,8 @@ public class ParameterMergerServer implements ParameterMerger {
     return new ParameterMessage(0, this.isConverge.get(),
         this.inMemoryModel.getWeightMatrices(),
         this.inMemoryModel.getPrevMatricesUpdates());
+        */
+    return null;
   }
 
 }

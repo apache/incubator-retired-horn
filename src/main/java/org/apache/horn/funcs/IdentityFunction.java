@@ -17,21 +17,21 @@
  */
 package org.apache.horn.funcs;
 
-import org.apache.hama.commons.math.DoubleFunction;
+import org.apache.hama.commons.math.FloatFunction;
 
 /**
  * The identity function f(x) = x.
  * 
  */
-public class IdentityFunction extends DoubleFunction {
+public class IdentityFunction extends FloatFunction {
 
   @Override
-  public double apply(double value) {
+  public float apply(float value) {
     return value;
   }
 
   @Override
-  public double applyDerivative(double value) {
+  public float applyDerivative(float value) {
     return 1;
   }
 

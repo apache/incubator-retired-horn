@@ -24,15 +24,15 @@ import java.io.IOException;
 import java.util.Random;
 
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.commons.math.DenseDoubleVector;
-import org.apache.hama.commons.math.DoubleVector;
+import org.apache.hama.commons.math.DenseFloatVector;
+import org.apache.hama.commons.math.FloatVector;
 import org.apache.horn.core.LayeredNeuralNetwork;
 
 public class MNISTEvaluator {
 
   private static int PIXELS = 28 * 28;
 
-  private static double rescale(double x) {
+  private static float rescale(float x) {
     return 1 - (255 - x) / 255;
   }
 
@@ -75,14 +75,14 @@ public class MNISTEvaluator {
     int total = 0;
     for (int i = 0; i < count; i++) {
       if (generator.nextInt(10) == 1) {
-        double[] vals = new double[PIXELS];
+        float[] vals = new float[PIXELS];
         for (int j = 0; j < PIXELS; j++) {
           vals[j] = rescale((images[i][j] & 0xff));
         }
         int label = (labels[i] & 0xff);
 
-        DoubleVector instance = new DenseDoubleVector(vals);
-        DoubleVector result = ann.getOutput(instance);
+        FloatVector instance = new DenseFloatVector(vals);
+        FloatVector result = ann.getOutput(instance);
 
         if (getNumber(result) == label) {
           correct++;
@@ -100,7 +100,7 @@ public class MNISTEvaluator {
     labelsIn.close();
   }
 
-  private static int getNumber(DoubleVector result) {
+  private static int getNumber(FloatVector result) {
     double max = 0;
     int index = -1;
     for (int x = 0; x < result.getLength(); x++) {

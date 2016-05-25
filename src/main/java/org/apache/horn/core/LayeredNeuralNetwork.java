@@ -29,20 +29,20 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.DoubleWritable;
+import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.WritableUtils;
+import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPJob;
-import org.apache.hama.Constants;
-import org.apache.hama.commons.io.MatrixWritable;
+import org.apache.hama.commons.io.FloatMatrixWritable;
 import org.apache.hama.commons.io.VectorWritable;
-import org.apache.hama.commons.math.DenseDoubleMatrix;
-import org.apache.hama.commons.math.DenseDoubleVector;
-import org.apache.hama.commons.math.DoubleFunction;
-import org.apache.hama.commons.math.DoubleMatrix;
-import org.apache.hama.commons.math.DoubleVector;
+import org.apache.hama.commons.math.DenseFloatMatrix;
+import org.apache.hama.commons.math.DenseFloatVector;
+import org.apache.hama.commons.math.FloatFunction;
+import org.apache.hama.commons.math.FloatMatrix;
+import org.apache.hama.commons.math.FloatVector;
 import org.apache.hama.util.ReflectionUtils;
 import org.apache.horn.core.Constants.LearningStyle;
 import org.apache.horn.core.Constants.TrainingMethod;
@@ -71,13 +71,13 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
   private static final Log LOG = LogFactory.getLog(LayeredNeuralNetwork.class);
 
   /* Weights between neurons at adjacent layers */
-  protected List<DoubleMatrix> weightMatrixList;
+  protected List<FloatMatrix> weightMatrixList;
 
   /* Previous weight updates between neurons at adjacent layers */
-  protected List<DoubleMatrix> prevWeightUpdatesList;
+  protected List<FloatMatrix> prevWeightUpdatesList;
 
   /* Different layers can have different squashing function */
-  protected List<DoubleFunction> squashingFunctionList;
+  protected List<FloatFunction> squashingFunctionList;
 
   protected List<Class<? extends Neuron>> neuronClassList;
 
@@ -129,12 +129,12 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
    * {@inheritDoc}
    */
   public int addLayer(int size, boolean isFinalLayer,
-      DoubleFunction squashingFunction, Class<? extends Neuron> neuronClass) {
+      FloatFunction squashingFunction, Class<? extends Neuron> neuronClass) {
     return addLayer(size, isFinalLayer, squashingFunction, neuronClass, null);
   }
 
   public int addLayer(int size, boolean isFinalLayer,
-      DoubleFunction squashingFunction, Class<? extends Neuron> neuronClass,
+      FloatFunction squashingFunction, Class<? extends Neuron> neuronClass,
       Class<? extends IntermediateOutput> interlayer) {
     Preconditions.checkArgument(size > 0,
         "Size of layer must be larger than 0.");
@@ -162,21 +162,21 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
       // size of previous layer
       int row = isFinalLayer ? size : size - 1;
       int col = sizePrevLayer;
-      DoubleMatrix weightMatrix = new DenseDoubleMatrix(row, col);
+      FloatMatrix weightMatrix = new DenseFloatMatrix(row, col);
       // initialize weights
-      weightMatrix.applyToElements(new DoubleFunction() {
+      weightMatrix.applyToElements(new FloatFunction() {
         @Override
-        public double apply(double value) {
-          return RandomUtils.nextDouble() - 0.5;
+        public float apply(float value) {
+          return RandomUtils.nextFloat() - 0.5f;
         }
 
         @Override
-        public double applyDerivative(double value) {
+        public float applyDerivative(float value) {
           throw new UnsupportedOperationException("");
         }
       });
       this.weightMatrixList.add(weightMatrix);
-      this.prevWeightUpdatesList.add(new DenseDoubleMatrix(row, col));
+      this.prevWeightUpdatesList.add(new DenseFloatMatrix(row, col));
       this.squashingFunctionList.add(squashingFunction);
 
       this.neuronClassList.add(neuronClass);
@@ -189,9 +189,9 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
    * 
    * @param matrices
    */
-  public void updateWeightMatrices(DoubleMatrix[] matrices) {
+  public void updateWeightMatrices(FloatMatrix[] matrices) {
     for (int i = 0; i < matrices.length; ++i) {
-      DoubleMatrix matrix = this.weightMatrixList.get(i);
+      FloatMatrix matrix = this.weightMatrixList.get(i);
       this.weightMatrixList.set(i, matrix.add(matrices[i]));
     }
   }
@@ -201,7 +201,7 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
    * 
    * @param prevUpdates
    */
-  void setPrevWeightMatrices(DoubleMatrix[] prevUpdates) {
+  void setPrevWeightMatrices(FloatMatrix[] prevUpdates) {
     this.prevWeightUpdatesList.clear();
     Collections.addAll(this.prevWeightUpdatesList, prevUpdates);
   }
@@ -212,8 +212,8 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
    * @param destMatrices
    * @param sourceMatrices
    */
-  static void matricesAdd(DoubleMatrix[] destMatrices,
-      DoubleMatrix[] sourceMatrices) {
+  static void matricesAdd(FloatMatrix[] destMatrices,
+      FloatMatrix[] sourceMatrices) {
     for (int i = 0; i < destMatrices.length; ++i) {
       destMatrices[i] = destMatrices[i].add(sourceMatrices[i]);
     }
@@ -224,8 +224,8 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
    * 
    * @return The matrices in form of matrix array.
    */
-  DoubleMatrix[] getWeightMatrices() {
-    DoubleMatrix[] matrices = new DoubleMatrix[this.weightMatrixList.size()];
+  FloatMatrix[] getWeightMatrices() {
+    FloatMatrix[] matrices = new FloatMatrix[this.weightMatrixList.size()];
     this.weightMatrixList.toArray(matrices);
     return matrices;
   }
@@ -235,8 +235,8 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
    * 
    * @param matrices
    */
-  public void setWeightMatrices(DoubleMatrix[] matrices) {
-    this.weightMatrixList = new ArrayList<DoubleMatrix>();
+  public void setWeightMatrices(FloatMatrix[] matrices) {
+    this.weightMatrixList = new ArrayList<FloatMatrix>();
     Collections.addAll(this.weightMatrixList, matrices);
   }
 
@@ -245,8 +245,8 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
    * 
    * @return The matrices in form of matrix array.
    */
-  public DoubleMatrix[] getPrevMatricesUpdates() {
-    DoubleMatrix[] prevMatricesUpdates = new DoubleMatrix[this.prevWeightUpdatesList
+  public FloatMatrix[] getPrevMatricesUpdates() {
+    FloatMatrix[] prevMatricesUpdates = new FloatMatrix[this.prevWeightUpdatesList
         .size()];
     for (int i = 0; i < this.prevWeightUpdatesList.size(); ++i) {
       prevMatricesUpdates[i] = this.prevWeightUpdatesList.get(i);
@@ -254,7 +254,7 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
     return prevMatricesUpdates;
   }
 
-  public void setWeightMatrix(int index, DoubleMatrix matrix) {
+  public void setWeightMatrix(int index, FloatMatrix matrix) {
     Preconditions.checkArgument(
         0 <= index && index < this.weightMatrixList.size(), String.format(
             "index [%d] should be in range[%d, %d].", index, 0,
@@ -287,7 +287,7 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
     this.squashingFunctionList = Lists.newArrayList();
     for (int i = 0; i < squashingFunctionSize; ++i) {
       this.squashingFunctionList.add(FunctionFactory
-          .createDoubleFunction(WritableUtils.readString(input)));
+          .createFloatFunction(WritableUtils.readString(input)));
     }
 
     // read weights and construct matrices of previous updates
@@ -295,10 +295,10 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
     this.weightMatrixList = Lists.newArrayList();
     this.prevWeightUpdatesList = Lists.newArrayList();
     for (int i = 0; i < numOfMatrices; ++i) {
-      DoubleMatrix matrix = MatrixWritable.read(input);
+      FloatMatrix matrix = FloatMatrixWritable.read(input);
       this.weightMatrixList.add(matrix);
-      this.prevWeightUpdatesList.add(new DenseDoubleMatrix(
-          matrix.getRowCount(), matrix.getColumnCount()));
+      this.prevWeightUpdatesList.add(new DenseFloatMatrix(matrix.getRowCount(),
+          matrix.getColumnCount()));
     }
 
   }
@@ -317,22 +317,22 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
 
     // write squashing functions
     output.writeInt(this.squashingFunctionList.size());
-    for (DoubleFunction aSquashingFunctionList : this.squashingFunctionList) {
+    for (FloatFunction aSquashingFunctionList : this.squashingFunctionList) {
       WritableUtils.writeString(output,
           aSquashingFunctionList.getFunctionName());
     }
 
     // write weight matrices
     output.writeInt(this.weightMatrixList.size());
-    for (DoubleMatrix aWeightMatrixList : this.weightMatrixList) {
-      MatrixWritable.write(aWeightMatrixList, output);
+    for (FloatMatrix aWeightMatrixList : this.weightMatrixList) {
+      FloatMatrixWritable.write(aWeightMatrixList, output);
     }
 
     // DO NOT WRITE WEIGHT UPDATE
   }
 
   @Override
-  public DoubleMatrix getWeightsByLayer(int layerIdx) {
+  public FloatMatrix getWeightsByLayer(int layerIdx) {
     return this.weightMatrixList.get(layerIdx);
   }
 
@@ -340,19 +340,19 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
    * Get the output of the model according to given feature instance.
    */
   @Override
-  public DoubleVector getOutput(DoubleVector instance) {
+  public FloatVector getOutput(FloatVector instance) {
     Preconditions.checkArgument(this.layerSizeList.get(0) - 1 == instance
         .getDimension(), String.format(
         "The dimension of input instance should be %d.",
         this.layerSizeList.get(0) - 1));
     // transform the features to another space
-    DoubleVector transformedInstance = this.featureTransformer
+    FloatVector transformedInstance = this.featureTransformer
         .transform(instance);
     // add bias feature
-    DoubleVector instanceWithBias = new DenseDoubleVector(
+    FloatVector instanceWithBias = new DenseFloatVector(
         transformedInstance.getDimension() + 1);
-    instanceWithBias.set(0, 0.99999); // set bias to be a little bit less than
-                                      // 1.0
+    instanceWithBias.set(0, 0.99999f); // set bias to be a little bit less than
+                                       // 1.0
     for (int i = 1; i < instanceWithBias.getDimension(); ++i) {
       instanceWithBias.set(i, transformedInstance.get(i - 1));
     }
@@ -368,7 +368,7 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
    * @param instanceWithBias The instance contains the features.
    * @return Cached output of each layer.
    */
-  public DoubleVector getOutputInternal(DoubleVector instanceWithBias) {
+  public FloatVector getOutputInternal(FloatVector instanceWithBias) {
     // sets the output of input layer
     Neuron[] inputLayer = neurons.get(0);
     for (int i = 0; i < inputLayer.length; i++) {
@@ -379,7 +379,7 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
       forward(i);
     }
 
-    DoubleVector output = new DenseDoubleVector(
+    FloatVector output = new DenseFloatVector(
         neurons.get(this.finalLayerIdx).length);
     for (int i = 0; i < output.getDimension(); i++) {
       output.set(i, neurons.get(this.finalLayerIdx)[i].getOutput());
@@ -404,17 +404,17 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
    */
   protected void forward(int fromLayer) {
     int curLayerIdx = fromLayer + 1;
-    DoubleMatrix weightMatrix = this.weightMatrixList.get(fromLayer);
+    FloatMatrix weightMatrix = this.weightMatrixList.get(fromLayer);
 
-    DoubleFunction squashingFunction = getSquashingFunction(fromLayer);
-    DoubleVector vec = new DenseDoubleVector(weightMatrix.getRowCount());
+    FloatFunction squashingFunction = getSquashingFunction(fromLayer);
+    FloatVector vec = new DenseFloatVector(weightMatrix.getRowCount());
 
     for (int row = 0; row < weightMatrix.getRowCount(); row++) {
-      List<Synapse<DoubleWritable, DoubleWritable>> msgs = new ArrayList<Synapse<DoubleWritable, DoubleWritable>>();
+      List<Synapse<FloatWritable, FloatWritable>> msgs = new ArrayList<Synapse<FloatWritable, FloatWritable>>();
       for (int col = 0; col < weightMatrix.getColumnCount(); col++) {
-        msgs.add(new Synapse<DoubleWritable, DoubleWritable>(
-            new DoubleWritable(neurons.get(fromLayer)[col].getOutput()),
-            new DoubleWritable(weightMatrix.get(row, col))));
+        msgs.add(new Synapse<FloatWritable, FloatWritable>(new FloatWritable(
+            neurons.get(fromLayer)[col].getOutput()), new FloatWritable(
+            weightMatrix.get(row, col))));
       }
 
       Neuron n;
@@ -459,20 +459,20 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
    * 
    * @param trainingInstance
    */
-  public void trainOnline(DoubleVector trainingInstance) {
-    DoubleMatrix[] updateMatrices = this.trainByInstance(trainingInstance);
+  public void trainOnline(FloatVector trainingInstance) {
+    FloatMatrix[] updateMatrices = this.trainByInstance(trainingInstance);
     this.updateWeightMatrices(updateMatrices);
   }
 
   @Override
-  public DoubleMatrix[] trainByInstance(DoubleVector trainingInstance) {
-    DoubleVector transformedVector = this.featureTransformer
+  public FloatMatrix[] trainByInstance(FloatVector trainingInstance) {
+    FloatVector transformedVector = this.featureTransformer
         .transform(trainingInstance.sliceUnsafe(this.layerSizeList.get(0) - 1));
 
     int inputDimension = this.layerSizeList.get(0) - 1;
     int outputDimension;
-    DoubleVector inputInstance = null;
-    DoubleVector labels = null;
+    FloatVector inputInstance = null;
+    FloatVector labels = null;
     if (this.learningStyle == LearningStyle.SUPERVISED) {
       outputDimension = this.layerSizeList.get(this.layerSizeList.size() - 1);
       // validate training instance
@@ -484,7 +484,7 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
                   trainingInstance.getDimension(), inputDimension
                       + outputDimension));
 
-      inputInstance = new DenseDoubleVector(this.layerSizeList.get(0));
+      inputInstance = new DenseFloatVector(this.layerSizeList.get(0));
       inputInstance.set(0, 1); // add bias
       // get the features from the transformed vector
       for (int i = 0; i < inputDimension; ++i) {
@@ -502,7 +502,7 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
           "The dimension of training instance is %d, but requires %d.",
           trainingInstance.getDimension(), inputDimension));
 
-      inputInstance = new DenseDoubleVector(this.layerSizeList.get(0));
+      inputInstance = new DenseFloatVector(this.layerSizeList.get(0));
       inputInstance.set(0, 1); // add bias
       // get the features from the transformed vector
       for (int i = 0; i < inputDimension; ++i) {
@@ -512,7 +512,7 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
       labels = transformedVector.deepCopy();
     }
 
-    DoubleVector output = this.getOutputInternal(inputInstance);
+    FloatVector output = this.getOutputInternal(inputInstance);
 
     // get the training error
     calculateTrainingError(labels, output);
@@ -532,27 +532,27 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
    * @param trainingInstance
    * @return The weight update matrices.
    */
-  private DoubleMatrix[] trainByInstanceGradientDescent(DoubleVector labels) {
+  private FloatMatrix[] trainByInstanceGradientDescent(FloatVector labels) {
 
     // initialize weight update matrices
-    DenseDoubleMatrix[] weightUpdateMatrices = new DenseDoubleMatrix[this.weightMatrixList
+    DenseFloatMatrix[] weightUpdateMatrices = new DenseFloatMatrix[this.weightMatrixList
         .size()];
     for (int m = 0; m < weightUpdateMatrices.length; ++m) {
-      weightUpdateMatrices[m] = new DenseDoubleMatrix(this.weightMatrixList
-          .get(m).getRowCount(), this.weightMatrixList.get(m).getColumnCount());
+      weightUpdateMatrices[m] = new DenseFloatMatrix(this.weightMatrixList.get(
+          m).getRowCount(), this.weightMatrixList.get(m).getColumnCount());
     }
-    DoubleVector deltaVec = new DenseDoubleVector(
+    FloatVector deltaVec = new DenseFloatVector(
         this.layerSizeList.get(this.layerSizeList.size() - 1));
 
-    DoubleFunction squashingFunction = this.squashingFunctionList
+    FloatFunction squashingFunction = this.squashingFunctionList
         .get(this.squashingFunctionList.size() - 1);
 
-    DoubleMatrix lastWeightMatrix = this.weightMatrixList
+    FloatMatrix lastWeightMatrix = this.weightMatrixList
         .get(this.weightMatrixList.size() - 1);
 
     for (int i = 0; i < deltaVec.getDimension(); ++i) {
-      double finalOut = neurons.get(finalLayerIdx)[i].getOutput();
-      double costFuncDerivative = this.costFunction.applyDerivative(
+      float finalOut = neurons.get(finalLayerIdx)[i].getOutput();
+      float costFuncDerivative = this.costFunction.applyDerivative(
           labels.get(i), finalOut);
       // add regularization
       costFuncDerivative += this.regularizationWeight
@@ -584,36 +584,34 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
    * @param layer Index of current layer.
    */
   private void backpropagate(int curLayerIdx,
-  // DoubleVector nextLayerDelta, DoubleVector curLayerOutput,
-      DenseDoubleMatrix weightUpdateMatrix) {
+  // FloatVector nextLayerDelta, FloatVector curLayerOutput,
+      DenseFloatMatrix weightUpdateMatrix) {
 
     // get layer related information
-    DoubleMatrix weightMatrix = this.weightMatrixList.get(curLayerIdx);
-    DoubleMatrix prevWeightMatrix = this.prevWeightUpdatesList.get(curLayerIdx);
+    FloatMatrix weightMatrix = this.weightMatrixList.get(curLayerIdx);
+    FloatMatrix prevWeightMatrix = this.prevWeightUpdatesList.get(curLayerIdx);
 
-    DoubleVector deltaVector = new DenseDoubleVector(
+    FloatVector deltaVector = new DenseFloatVector(
         weightMatrix.getColumnCount());
 
     for (int row = 0; row < weightMatrix.getColumnCount(); ++row) {
       Neuron n = neurons.get(curLayerIdx)[row];
       n.setWeightVector(weightMatrix.getRowCount());
 
-      List<Synapse<DoubleWritable, DoubleWritable>> msgs = new ArrayList<Synapse<DoubleWritable, DoubleWritable>>();
+      List<Synapse<FloatWritable, FloatWritable>> msgs = new ArrayList<Synapse<FloatWritable, FloatWritable>>();
 
       for (int col = 0; col < weightMatrix.getRowCount(); ++col) {
-        double deltaOfNextLayer;
+        float deltaOfNextLayer;
         if (curLayerIdx + 1 == this.finalLayerIdx)
           deltaOfNextLayer = neurons.get(curLayerIdx + 1)[col].getDelta();
         else
           deltaOfNextLayer = neurons.get(curLayerIdx + 1)[col + 1].getDelta();
 
-        msgs.add(new Synapse<DoubleWritable, DoubleWritable>(
-            new DoubleWritable(deltaOfNextLayer), new DoubleWritable(
-                weightMatrix.get(col, row)), new DoubleWritable(
-                prevWeightMatrix.get(col, row))));
+        msgs.add(new Synapse<FloatWritable, FloatWritable>(new FloatWritable(
+            deltaOfNextLayer), new FloatWritable(weightMatrix.get(col, row)),
+            new FloatWritable(prevWeightMatrix.get(col, row))));
       }
 
-      Iterable<Synapse<DoubleWritable, DoubleWritable>> iterable = msgs;
       try {
         n.backward(msgs);
       } catch (IOException e) {
@@ -653,7 +651,7 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
     job.setBspClass(LayeredNeuralNetworkTrainer.class);
 
     job.getConfiguration().setInt(Constants.ADDITIONAL_BSP_TASKS, 1);
-    
+
     job.setInputPath(new Path(conf.get("training.input.path")));
     job.setInputFormat(org.apache.hama.bsp.SequenceFileInputFormat.class);
     job.setInputKeyClass(LongWritable.class);
@@ -666,8 +664,8 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
   }
 
   @Override
-  protected void calculateTrainingError(DoubleVector labels, DoubleVector output) {
-    DoubleVector errors = labels.deepCopy().applyToElements(output,
+  protected void calculateTrainingError(FloatVector labels, FloatVector output) {
+    FloatVector errors = labels.deepCopy().applyToElements(output,
         this.costFunction);
     this.trainingError = errors.sum();
   }
@@ -678,7 +676,7 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
    * @param idx
    * @return a new vector with the result of the operation.
    */
-  public DoubleFunction getSquashingFunction(int idx) {
+  public FloatFunction getSquashingFunction(int idx) {
     return this.squashingFunctionList.get(idx);
   }
 

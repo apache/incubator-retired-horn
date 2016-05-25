@@ -72,43 +72,8 @@ CLASSPATH="${HORN_CONF_DIR}"
 CLASSPATH=${CLASSPATH}:$JAVA_HOME/lib/tools.jar
 
 # for developers, add Horn classes to CLASSPATH
-if [ -d "$HORN_HOME/core/target/classes" ]; then
-  CLASSPATH=${CLASSPATH}:$HORN_HOME/core/target/classes
-fi
-if [ -d "$HORN_HOME/core/target/test-classes/classes" ]; then
-  CLASSPATH=${CLASSPATH}:$HORN_HOME/core/target/test-classes
-fi
-
-# for developers, add Commons classes to CLASSPATH
-if [ -d "$HORN_HOME/commons/target/classes" ]; then
-  CLASSPATH=${CLASSPATH}:$HORN_HOME/commons/target/classes
-fi
-if [ -d "$HORN_HOME/commons/target/test-classes/classes" ]; then
-  CLASSPATH=${CLASSPATH}:$HORN_HOME/commons/target/test-classes
-fi
-
-# for developers, add Graph classes to CLASSPATH
-if [ -d "$HORN_HOME/graph/target/classes" ]; then
-  CLASSPATH=${CLASSPATH}:$HORN_HOME/graph/target/classes
-fi
-if [ -d "$HORN_HOME/graph/target/test-classes/classes" ]; then
-  CLASSPATH=${CLASSPATH}:$HORN_HOME/graph/target/test-classes
-fi
-
-# for developers, add ML classes to CLASSPATH
-if [ -d "$HORN_HOME/ml/target/classes" ]; then
-  CLASSPATH=${CLASSPATH}:$HORN_HOME/ml/target/classes
-fi
-if [ -d "$HORN_HOME/ml/target/test-classes/classes" ]; then
-  CLASSPATH=${CLASSPATH}:$HORN_HOME/ml/target/test-classes
-fi
-
-# add mesos classes to CLASSPATH
-if [ -d "$HORN_HOME/mesos/target/classes" ]; then
-  CLASSPATH=${CLASSPATH}:$HORN_HOME/mesos/target/classes
-fi
-if [ -d "$HORN_HOME/mesos/target/test-classes/classes" ]; then
-  CLASSPATH=${CLASSPATH}:$HORN_HOME/mesos/target/test-classes
+if [ -d "$HORN_HOME/target/classes" ]; then
+  CLASSPATH=${CLASSPATH}:$HORN_HOME/target/classes
 fi
 
 # so that filenames w/ spaces are handled correctly in loops below

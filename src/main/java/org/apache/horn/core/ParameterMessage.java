@@ -22,9 +22,9 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 import org.apache.hadoop.io.Writable;
-import org.apache.hama.commons.io.MatrixWritable;
-import org.apache.hama.commons.math.DenseDoubleMatrix;
-import org.apache.hama.commons.math.DoubleMatrix;
+import org.apache.hama.commons.io.FloatMatrixWritable;
+import org.apache.hama.commons.math.DenseFloatMatrix;
+import org.apache.hama.commons.math.FloatMatrix;
 
 /**
  * ParameterMessage transmits the messages between workers and parameter
@@ -33,18 +33,18 @@ import org.apache.hama.commons.math.DoubleMatrix;
  */
 public class ParameterMessage implements Writable {
 
-  protected double trainingError;
-  protected DoubleMatrix[] curMatrices;
-  protected DoubleMatrix[] prevMatrices;
+  protected float trainingError;
+  protected FloatMatrix[] curMatrices;
+  protected FloatMatrix[] prevMatrices;
   protected boolean converge;
 
   public ParameterMessage() {
     this.converge = false;
-    this.trainingError = 0.0d;
+    this.trainingError = 0.0f;
   }
 
-  public ParameterMessage(double trainingError, boolean converge,
-      DoubleMatrix[] weightMatrices, DoubleMatrix[] prevMatrices) {
+  public ParameterMessage(float trainingError, boolean converge,
+      FloatMatrix[] weightMatrices, FloatMatrix[] prevMatrices) {
     this.trainingError = trainingError;
     this.converge = converge;
     this.curMatrices = weightMatrices;
@@ -53,40 +53,40 @@ public class ParameterMessage implements Writable {
 
   @Override
   public void readFields(DataInput input) throws IOException {
-    trainingError = input.readDouble();
+    trainingError = input.readFloat();
     converge = input.readBoolean();
     boolean hasCurMatrices = input.readBoolean();
     if(hasCurMatrices) {
       int numMatrices = input.readInt();
-      curMatrices = new DenseDoubleMatrix[numMatrices];
+      curMatrices = new DenseFloatMatrix[numMatrices];
       // read matrice updates
       for (int i = 0; i < curMatrices.length; ++i) {
-        curMatrices[i] = (DenseDoubleMatrix) MatrixWritable.read(input);
+        curMatrices[i] = (DenseFloatMatrix) FloatMatrixWritable.read(input);
       }
     }
     
     boolean hasPrevMatrices = input.readBoolean();
     if (hasPrevMatrices) {
       int numMatrices = input.readInt();
-      prevMatrices = new DenseDoubleMatrix[numMatrices];
+      prevMatrices = new DenseFloatMatrix[numMatrices];
       // read previous matrices updates
       for (int i = 0; i < prevMatrices.length; ++i) {
-        prevMatrices[i] = (DenseDoubleMatrix) MatrixWritable.read(input);
+        prevMatrices[i] = (DenseFloatMatrix) FloatMatrixWritable.read(input);
       }
     }
   }
 
   @Override
   public void write(DataOutput output) throws IOException {
-    output.writeDouble(trainingError);
+    output.writeFloat(trainingError);
     output.writeBoolean(converge);
     if (curMatrices == null) {
       output.writeBoolean(false);
     } else {
       output.writeBoolean(true);
       output.writeInt(curMatrices.length);
-      for (DoubleMatrix matrix : curMatrices) {
-        MatrixWritable.write(matrix, output);
+      for (FloatMatrix matrix : curMatrices) {
+        FloatMatrixWritable.write(matrix, output);
       }
     }
     
@@ -95,8 +95,8 @@ public class ParameterMessage implements Writable {
     } else {
       output.writeBoolean(true);
       output.writeInt(prevMatrices.length);
-      for (DoubleMatrix matrix : prevMatrices) {
-        MatrixWritable.write(matrix, output);
+      for (FloatMatrix matrix : prevMatrices) {
+        FloatMatrixWritable.write(matrix, output);
       }
     }
   }
@@ -105,7 +105,7 @@ public class ParameterMessage implements Writable {
     return trainingError;
   }
 
-  public void setTrainingError(double trainingError) {
+  public void setTrainingError(float trainingError) {
     this.trainingError = trainingError;
   }
 
@@ -117,19 +117,19 @@ public class ParameterMessage implements Writable {
     this.converge = converge;
   }
 
-  public DoubleMatrix[] getCurMatrices() {
+  public FloatMatrix[] getCurMatrices() {
     return curMatrices;
   }
 
-  public void setMatrices(DoubleMatrix[] curMatrices) {
+  public void setMatrices(FloatMatrix[] curMatrices) {
     this.curMatrices = curMatrices;
   }
 
-  public DoubleMatrix[] getPrevMatrices() {
+  public FloatMatrix[] getPrevMatrices() {
     return prevMatrices;
   }
 
-  public void setPrevMatrices(DoubleMatrix[] prevMatrices) {
+  public void setPrevMatrices(FloatMatrix[] prevMatrices) {
     this.prevMatrices = prevMatrices;
   }
 

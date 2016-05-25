@@ -19,7 +19,7 @@ package org.apache.horn.examples;
 
 import java.io.IOException;
 
-import org.apache.hadoop.io.DoubleWritable;
+import org.apache.hadoop.io.FloatWritable;
 import org.apache.hama.HamaConfiguration;
 import org.apache.horn.core.Constants.TrainingMethod;
 import org.apache.horn.core.HornJob;
@@ -32,14 +32,14 @@ import org.apache.horn.funcs.SoftMax;
 public class MultiLayerPerceptron {
 
   public static class StandardNeuron extends
-      Neuron<Synapse<DoubleWritable, DoubleWritable>> {
+      Neuron<Synapse<FloatWritable, FloatWritable>> {
 
     @Override
     public void forward(
-        Iterable<Synapse<DoubleWritable, DoubleWritable>> messages)
+        Iterable<Synapse<FloatWritable, FloatWritable>> messages)
         throws IOException {
-      double sum = 0;
-      for (Synapse<DoubleWritable, DoubleWritable> m : messages) {
+      float sum = 0;
+      for (Synapse<FloatWritable, FloatWritable> m : messages) {
         sum += m.getInput() * m.getWeight();
       }
       this.feedforward(squashingFunction.apply(sum));
@@ -47,15 +47,15 @@ public class MultiLayerPerceptron {
 
     @Override
     public void backward(
-        Iterable<Synapse<DoubleWritable, DoubleWritable>> messages)
+        Iterable<Synapse<FloatWritable, FloatWritable>> messages)
         throws IOException {
-      double gradient = 0;
-      for (Synapse<DoubleWritable, DoubleWritable> m : messages) {
+      float gradient = 0;
+      for (Synapse<FloatWritable, FloatWritable> m : messages) {
         // Calculates error gradient for each neuron
         gradient += (m.getDelta() * m.getWeight());
 
         // Weight corrections
-        double weight = -this.getLearningRate() * this.getOutput()
+        float weight = -this.getLearningRate() * this.getOutput()
             * m.getDelta() + this.getMomentumWeight() * m.getPrevWeight();
         this.push(weight);
       }
@@ -66,8 +66,8 @@ public class MultiLayerPerceptron {
   }
 
   public static HornJob createJob(HamaConfiguration conf, String modelPath,
-      String inputPath, double learningRate, double momemtumWeight,
-      double regularizationWeight, int features, int hu, int labels,
+      String inputPath, float learningRate, float momemtumWeight,
+      float regularizationWeight, int features, int hu, int labels,
       int miniBatch, int maxIteration) throws IOException {
 
     HornJob job = new HornJob(conf, MultiLayerPerceptron.class);
@@ -79,7 +79,7 @@ public class MultiLayerPerceptron {
     job.setMomentumWeight(momemtumWeight);
     job.setRegularizationWeight(regularizationWeight);
 
-    job.setConvergenceCheckInterval(600);
+    job.setConvergenceCheckInterval(1000);
     job.setBatchSize(miniBatch);
 
     job.setTrainingMethod(TrainingMethod.GRADIENT_DESCENT);
@@ -104,8 +104,8 @@ public class MultiLayerPerceptron {
     }
 
     HornJob ann = createJob(new HamaConfiguration(), args[0], args[1],
-        Double.parseDouble(args[2]), Double.parseDouble(args[3]),
-        Double.parseDouble(args[4]), Integer.parseInt(args[5]),
+        Float.parseFloat(args[2]), Float.parseFloat(args[3]),
+        Float.parseFloat(args[4]), Integer.parseInt(args[5]),
         Integer.parseInt(args[6]), Integer.parseInt(args[7]),
         Integer.parseInt(args[8]), Integer.parseInt(args[9]));
 

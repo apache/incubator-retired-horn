@@ -49,7 +49,7 @@ public class HornJob extends BSPJob {
       Class<? extends Neuron> neuronClass) {
     neuralNetwork
         .addLayer(featureDimension, false,
-            FunctionFactory.createDoubleFunction(func.getSimpleName()),
+            FunctionFactory.createFloatFunction(func.getSimpleName()),
             neuronClass);
   }
 
@@ -58,13 +58,13 @@ public class HornJob extends BSPJob {
       Class<? extends Neuron> neuronClass) {
     neuralNetwork
         .addLayer(labels, true,
-            FunctionFactory.createDoubleFunction(func.getSimpleName()),
+            FunctionFactory.createFloatFunction(func.getSimpleName()),
             neuronClass);
   }
 
   public void setCostFunction(Class<? extends Function> func) {
     neuralNetwork.setCostFunction(FunctionFactory
-        .createDoubleDoubleFunction(func.getSimpleName()));
+        .createFloatFloatFunction(func.getSimpleName()));
   }
 
   public void setDouble(String name, double value) {
@@ -87,7 +87,7 @@ public class HornJob extends BSPJob {
     this.neuralNetwork.setLearningStyle(style);
   }
   
-  public void setLearningRate(double learningRate) {
+  public void setLearningRate(float learningRate) {
     this.neuralNetwork.setLearningRate(learningRate);
   }
   
@@ -95,11 +95,11 @@ public class HornJob extends BSPJob {
     this.conf.setInt("convergence.check.interval", n);
   }
 
-  public void setMomentumWeight(double momentumWeight) {
+  public void setMomentumWeight(float momentumWeight) {
     this.neuralNetwork.setMomemtumWeight(momentumWeight);
   }
   
-  public void setRegularizationWeight(double regularizationWeight) {
+  public void setRegularizationWeight(float regularizationWeight) {
     this.neuralNetwork.setRegularizationWeight(regularizationWeight);
   }
 

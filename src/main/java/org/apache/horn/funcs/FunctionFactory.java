@@ -17,8 +17,8 @@
  */
 package org.apache.horn.funcs;
 
-import org.apache.hama.commons.math.DoubleDoubleFunction;
-import org.apache.hama.commons.math.DoubleFunction;
+import org.apache.hama.commons.math.FloatFloatFunction;
+import org.apache.hama.commons.math.FloatFunction;
 
 /**
  * Factory to create the functions.
@@ -32,7 +32,7 @@ public class FunctionFactory {
    * @param functionName
    * @return an appropriate double function.
    */
-  public static DoubleFunction createDoubleFunction(String functionName) {
+  public static FloatFunction createFloatFunction(String functionName) {
     if (functionName.equalsIgnoreCase(Sigmoid.class.getSimpleName())) {
       return new Sigmoid();
     } else if (functionName.equalsIgnoreCase(Tanh.class.getSimpleName())) {
@@ -56,7 +56,7 @@ public class FunctionFactory {
    * @param functionName
    * @return an appropriate double double function.
    */
-  public static DoubleDoubleFunction createDoubleDoubleFunction(
+  public static FloatFloatFunction createFloatFloatFunction(
       String functionName) {
     if (functionName.equalsIgnoreCase(SquaredError.class.getSimpleName())) {
       return new SquaredError();

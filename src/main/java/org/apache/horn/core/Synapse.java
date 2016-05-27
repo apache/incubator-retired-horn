@@ -30,19 +30,42 @@ import org.apache.hadoop.io.Writable;
 public class Synapse<M extends Writable, W extends Writable> implements
     Writable {
 
+  int neuronID;
   FloatWritable message;
   FloatWritable weight;
   FloatWritable prevWeight;
 
-  public Synapse(FloatWritable message, FloatWritable weight) {
+  public Synapse() {
+  }
+  
+  public Synapse(int neuronID, FloatWritable message, FloatWritable weight) {
+    this.neuronID = neuronID;
     this.message = message;
     this.weight = weight;
   }
 
-  public Synapse(FloatWritable message, FloatWritable weight, FloatWritable prevWeight) {
+  public Synapse(int neuronID, FloatWritable message, FloatWritable weight, FloatWritable prevWeight) {
+    this.neuronID = neuronID;
     this.message = message;
     this.weight = weight;
     this.prevWeight = prevWeight;
+  }
+  
+  public void set(int neuronID, FloatWritable message, FloatWritable weight) {
+    this.neuronID = neuronID;
+    this.message = message;
+    this.weight = weight;
+  }
+  
+  public void set(int neuronID, FloatWritable message, FloatWritable weight, FloatWritable prevWeight) {
+    this.neuronID = neuronID;
+    this.message = message;
+    this.weight = weight;
+    this.prevWeight = prevWeight;
+  }
+  
+  public int getSenderID() {
+    return neuronID;
   }
   
   /**
@@ -74,12 +97,16 @@ public class Synapse<M extends Writable, W extends Writable> implements
   public void readFields(DataInput in) throws IOException {
     message.readFields(in);
     weight.readFields(in);
+    prevWeight.readFields(in);
+    neuronID = in.readInt();
   }
 
   @Override
   public void write(DataOutput out) throws IOException {
     message.write(out);
     weight.write(out);
+    prevWeight.write(out);
+    out.writeInt(neuronID);
   }
 
 }

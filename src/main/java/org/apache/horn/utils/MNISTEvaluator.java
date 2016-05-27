@@ -21,7 +21,6 @@ import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Random;
 
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.commons.math.DenseFloatVector;
@@ -60,41 +59,30 @@ public class MNISTEvaluator {
     imagesIn.readInt(); // Rows
     imagesIn.readInt(); // Cols
 
-    byte[][] images = new byte[count][PIXELS];
-    byte[] labels = new byte[count];
-    for (int n = 0; n < count; n++) {
-      imagesIn.readFully(images[n]);
-      labels[n] = labelsIn.readByte();
-    }
-
     HamaConfiguration conf = new HamaConfiguration();
     LayeredNeuralNetwork ann = new LayeredNeuralNetwork(conf, modelPath);
 
-    Random generator = new Random();
     int correct = 0;
     int total = 0;
-    for (int i = 0; i < count; i++) {
-      if (generator.nextInt(10) == 1) {
-        float[] vals = new float[PIXELS];
-        for (int j = 0; j < PIXELS; j++) {
-          vals[j] = rescale((images[i][j] & 0xff));
-        }
-        int label = (labels[i] & 0xff);
 
-        FloatVector instance = new DenseFloatVector(vals);
-        FloatVector result = ann.getOutput(instance);
+    for (int n = 0; n < count; n++) {
+      byte[] vector = new byte[PIXELS];
+      imagesIn.readFully(vector);
+      int label = (labelsIn.readByte() & 0xff);
 
-        if (getNumber(result) == label) {
-          correct++;
-        }
-        total++;
+      FloatVector instance = new DenseFloatVector(PIXELS);
+      for (int j = 0; j < PIXELS; j++) {
+        instance.set(j, rescale((vector[j] & 0xff)));
       }
+      FloatVector result = ann.getOutput(instance);
+
+      if (getNumber(result) == label) {
+        correct++;
+      }
+      total++;
     }
 
-    System.out.println(((double) correct / total * 100) + "%");
-    // TODO System.out.println("Precision = " + (tp / (tp + fp)));
-    // System.out.println("Recall = " + (tp / (tp + fn)));
-    // System.out.println("Accuracy = " + ((tp + tn) / (tp + tn + fp + fn)));
+    System.out.println("Accuracy: " + ((double) correct / total));
 
     imagesIn.close();
     labelsIn.close();

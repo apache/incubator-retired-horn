@@ -35,36 +35,39 @@ public class HornJob extends BSPJob {
     super(conf);
     this.setJarByClass(exampleClass);
 
+    // default local file block size 10mb
+    this.getConfiguration().set("fs.local.block.size", "10358951");
     neuralNetwork = new LayeredNeuralNetwork();
   }
 
-  @SuppressWarnings("rawtypes")
-  public void inputLayer(int featureDimension, Class<? extends Function> func,
-      Class<? extends Neuron> neuronClass) {
-    addLayer(featureDimension, func, neuronClass);
+  public void inputLayer(int featureDimension) {
+    addLayer(featureDimension, null, null);
+    neuralNetwork.setDropRateOfInputLayer(1);
   }
 
-  @SuppressWarnings("rawtypes")
+  public void inputLayer(int featureDimension, float dropRate) {
+    addLayer(featureDimension, null, null);
+    neuralNetwork.setDropRateOfInputLayer(dropRate);
+  }
+
   public void addLayer(int featureDimension, Class<? extends Function> func,
-      Class<? extends Neuron> neuronClass) {
-    neuralNetwork
-        .addLayer(featureDimension, false,
-            FunctionFactory.createFloatFunction(func.getSimpleName()),
-            neuronClass);
+      Class<? extends Neuron<?>> neuronClass) {
+    neuralNetwork.addLayer(
+        featureDimension,
+        false,
+        (func != null) ? FunctionFactory.createFloatFunction(func
+            .getSimpleName()) : null, neuronClass);
   }
 
-  @SuppressWarnings("rawtypes")
   public void outputLayer(int labels, Class<? extends Function> func,
-      Class<? extends Neuron> neuronClass) {
-    neuralNetwork
-        .addLayer(labels, true,
-            FunctionFactory.createFloatFunction(func.getSimpleName()),
-            neuronClass);
+      Class<? extends Neuron<?>> neuronClass) {
+    neuralNetwork.addLayer(labels, true,
+        FunctionFactory.createFloatFunction(func.getSimpleName()), neuronClass);
   }
 
   public void setCostFunction(Class<? extends Function> func) {
-    neuralNetwork.setCostFunction(FunctionFactory
-        .createFloatFloatFunction(func.getSimpleName()));
+    neuralNetwork.setCostFunction(FunctionFactory.createFloatFloatFunction(func
+        .getSimpleName()));
   }
 
   public void setDouble(String name, double value) {
@@ -82,15 +85,15 @@ public class HornJob extends BSPJob {
   public void setTrainingMethod(TrainingMethod method) {
     this.neuralNetwork.setTrainingMethod(method);
   }
-  
+
   public void setLearningStyle(LearningStyle style) {
     this.neuralNetwork.setLearningStyle(style);
   }
-  
+
   public void setLearningRate(float learningRate) {
     this.neuralNetwork.setLearningRate(learningRate);
   }
-  
+
   public void setConvergenceCheckInterval(int n) {
     this.conf.setInt("convergence.check.interval", n);
   }
@@ -98,7 +101,7 @@ public class HornJob extends BSPJob {
   public void setMomentumWeight(float momentumWeight) {
     this.neuralNetwork.setMomemtumWeight(momentumWeight);
   }
-  
+
   public void setRegularizationWeight(float regularizationWeight) {
     this.neuralNetwork.setRegularizationWeight(regularizationWeight);
   }

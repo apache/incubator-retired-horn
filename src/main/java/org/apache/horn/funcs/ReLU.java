@@ -30,15 +30,15 @@ public class ReLU extends FloatFunction {
 
   @Override
   public float apply(float value) {
-    return Math.max(0.001f, value);
+    return Math.max(0.0f, value);
   }
 
   @Override
   public float applyDerivative(float value) {
     if (value > 0)
-      return 0.999f;
+      return 1.0f;
     else
-      return 0.001f;
+      return 0.0f;
   }
 
 }

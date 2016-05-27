@@ -20,7 +20,6 @@ package org.apache.horn.funcs;
 import java.io.IOException;
 
 import org.apache.hama.commons.math.DenseFloatVector;
-import org.apache.hama.commons.math.DoubleVector;
 import org.apache.hama.commons.math.FloatFunction;
 import org.apache.hama.commons.math.FloatVector;
 import org.apache.horn.core.IntermediateOutput;
@@ -44,11 +43,13 @@ public class SoftMax extends FloatFunction {
     public FloatVector interlayer(FloatVector output) throws IOException {
       FloatVector expVec = new DenseFloatVector(output.getDimension());
       float sum = 0.0f;
+      float max = output.max(); // to avoid infinity
       for(int i = 0; i < output.getDimension(); ++i) {
-        float exp = (float) Math.exp(output.get(i));
+        float exp = (float) Math.exp(output.get(i) - max);
         sum += exp;
         expVec.set(i, exp);
       }
+      
       // divide by the sum of exponential of the whole vector
       FloatVector softmaxed = expVec.divide(sum);
       return softmaxed;

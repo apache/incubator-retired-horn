@@ -15,26 +15,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.horn.funcs;
+package org.apache.horn.utils;
 
-import org.apache.hama.commons.math.FloatFloatFunction;
+public class MathUtils {
 
-/**
- * for softmaxed output
- */
-public class CategoricalCrossEntropy extends FloatFloatFunction {
-
-  private static final float epsilon = 1e-8f;
-
-  @Override
-  public float apply(float target, float actual) {
-    return -target * (float) Math.log(Math.min(Math.max(actual, epsilon), 1.0f));
+  public static int getBinomial(int n, double p) {
+    int x = 0;
+    for (int i = 0; i < n; i++) {
+      if (Math.random() < p)
+        x++;
+    }
+    return x;
   }
-
-  @Override
-  public float applyDerivative(float target, float actual) {
-    // o - y
-    return -(target - actual);
-  }
-
+  
 }

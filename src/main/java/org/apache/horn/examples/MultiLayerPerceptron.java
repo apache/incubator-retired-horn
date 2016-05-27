@@ -26,7 +26,7 @@ import org.apache.horn.core.HornJob;
 import org.apache.horn.core.Neuron;
 import org.apache.horn.core.Synapse;
 import org.apache.horn.funcs.CrossEntropy;
-import org.apache.horn.funcs.Sigmoid;
+import org.apache.horn.funcs.ReLU;
 import org.apache.horn.funcs.SoftMax;
 
 public class MultiLayerPerceptron {
@@ -35,8 +35,7 @@ public class MultiLayerPerceptron {
       Neuron<Synapse<FloatWritable, FloatWritable>> {
 
     @Override
-    public void forward(
-        Iterable<Synapse<FloatWritable, FloatWritable>> messages)
+    public void forward(Iterable<Synapse<FloatWritable, FloatWritable>> messages)
         throws IOException {
       float sum = 0;
       for (Synapse<FloatWritable, FloatWritable> m : messages) {
@@ -49,19 +48,21 @@ public class MultiLayerPerceptron {
     public void backward(
         Iterable<Synapse<FloatWritable, FloatWritable>> messages)
         throws IOException {
-      float gradient = 0;
-      for (Synapse<FloatWritable, FloatWritable> m : messages) {
-        // Calculates error gradient for each neuron
-        gradient += (m.getDelta() * m.getWeight());
+      float delta = 0;
 
-        // Weight corrections
-        float weight = -this.getLearningRate() * this.getOutput()
-            * m.getDelta() + this.getMomentumWeight() * m.getPrevWeight();
-        this.push(weight);
+      if (!this.isDropped()) {
+        for (Synapse<FloatWritable, FloatWritable> m : messages) {
+          // Calculates error gradient for each neuron
+          delta += (m.getDelta() * m.getWeight());
+
+          // Weight corrections
+          float weight = -this.getLearningRate() * m.getDelta()
+              * this.getOutput() + this.getMomentumWeight() * m.getPrevWeight();
+          this.push(weight);
+        }
       }
 
-      this.backpropagate(gradient
-          * squashingFunction.applyDerivative(getOutput()));
+      this.backpropagate(delta * squashingFunction.applyDerivative(getOutput()));
     }
   }
 
@@ -79,13 +80,13 @@ public class MultiLayerPerceptron {
     job.setMomentumWeight(momemtumWeight);
     job.setRegularizationWeight(regularizationWeight);
 
-    job.setConvergenceCheckInterval(1000);
+    job.setConvergenceCheckInterval(100);
     job.setBatchSize(miniBatch);
 
     job.setTrainingMethod(TrainingMethod.GRADIENT_DESCENT);
 
-    job.inputLayer(features, Sigmoid.class, StandardNeuron.class);
-    job.addLayer(hu, Sigmoid.class, StandardNeuron.class);
+    job.inputLayer(features, 0.8f); // droprate
+    job.addLayer(hu, ReLU.class, DropoutNeuron.class);
     job.outputLayer(labels, SoftMax.class, StandardNeuron.class);
 
     job.setCostFunction(CrossEntropy.class);
@@ -111,7 +112,7 @@ public class MultiLayerPerceptron {
 
     long startTime = System.currentTimeMillis();
     if (ann.waitForCompletion(true)) {
-      System.out.println("Job Finished in "
+      System.out.println("Optimization Finished! "
           + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
     }
   }

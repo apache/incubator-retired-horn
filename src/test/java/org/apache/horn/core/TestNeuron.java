@@ -71,9 +71,9 @@ public class TestNeuron extends TestCase {
 
   public void testProp() throws IOException {
     List<Synapse<FloatWritable, FloatWritable>> x = new ArrayList<Synapse<FloatWritable, FloatWritable>>();
-    x.add(new Synapse<FloatWritable, FloatWritable>(new FloatWritable(1.0f),
+    x.add(new Synapse<FloatWritable, FloatWritable>(0, new FloatWritable(1.0f),
         new FloatWritable(0.5f)));
-    x.add(new Synapse<FloatWritable, FloatWritable>(new FloatWritable(1.0f),
+    x.add(new Synapse<FloatWritable, FloatWritable>(0, new FloatWritable(1.0f),
         new FloatWritable(0.4f)));
 
     MyNeuron n = new MyNeuron();
@@ -81,7 +81,7 @@ public class TestNeuron extends TestCase {
     assertEquals(0.5249792f, n.getOutput());
 
     x.clear();
-    x.add(new Synapse<FloatWritable, FloatWritable>(new FloatWritable(
+    x.add(new Synapse<FloatWritable, FloatWritable>(0, new FloatWritable(
         -0.1274f), new FloatWritable(-1.2f)));
     n.backward(x);
   }

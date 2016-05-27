@@ -78,9 +78,9 @@ public final class LayeredNeuralNetworkTrainer
     this.maxIterations = conf.getLong("training.max.iterations", Long.MAX_VALUE);
     this.convergenceCheckInterval = conf.getLong("convergence.check.interval",
         100);
-    this.inMemoryModel = new LayeredNeuralNetwork(conf, modelPath);
+    this.inMemoryModel = new LayeredNeuralNetwork(conf, modelPath, true);
     this.prevAvgTrainingError = Integer.MAX_VALUE;
-    this.batchSize = conf.getInt("training.batch.size", 50);
+    this.batchSize = conf.getInt("training.batch.size", 5);
   }
 
   @Override
@@ -117,8 +117,14 @@ public final class LayeredNeuralNetworkTrainer
       FloatVector v = value.getVector();
       trainingSet.add(v);
     }
-
+    
+    if (peer.getPeerIndex() != peer.getNumPeers() - 1) {
+      LOG.debug(peer.getPeerName() + ": " + trainingSet.size() + " training instances loaded.");
+    }
+    
     while (this.iterations++ < maxIterations) {
+      this.inMemoryModel.setIterationNumber(iterations);
+      
       // each groom calculate the matrices updates according to local data
       if (peer.getPeerIndex() != peer.getNumPeers() - 1) {
         calculateUpdates(peer);
@@ -188,6 +194,7 @@ public final class LayeredNeuralNetworkTrainer
           this.inMemoryModel.trainByInstance(trainingInstance));
       avgTrainingError += this.inMemoryModel.trainingError;
     }
+    
     avgTrainingError /= batchSize;
 
     // calculate the average of updates

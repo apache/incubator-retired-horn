@@ -24,7 +24,8 @@ import java.io.IOException;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.commons.math.FloatFunction;
 
-public abstract class Neuron<M extends Writable> implements Writable, NeuronInterface<M> {
+public abstract class Neuron<M extends Writable> implements Writable,
+    NeuronInterface<M> {
   int id;
   float output;
   float weight;
@@ -35,17 +36,20 @@ public abstract class Neuron<M extends Writable> implements Writable, NeuronInte
 
   int layerIndex;
   boolean isOutputLayer;
-  
+  boolean isTraining;
+  boolean isDropped;
+  long iterations;
+
   protected FloatFunction squashingFunction;
 
   public void setNeuronID(int id) {
     this.id = id;
   }
-  
-  public int getID() {
+
+  public int getNeuronID() {
     return id;
   }
-  
+
   public int getLayerIndex() {
     return layerIndex;
   }
@@ -53,7 +57,7 @@ public abstract class Neuron<M extends Writable> implements Writable, NeuronInte
   public void setLayerIndex(int index) {
     this.layerIndex = index;
   }
-  
+
   public void feedforward(float sum) {
     this.output = sum;
   }
@@ -62,10 +66,6 @@ public abstract class Neuron<M extends Writable> implements Writable, NeuronInte
     this.delta = gradient;
   }
 
-  public void setDelta(float delta) {
-    this.delta = delta;
-  }
-  
   public float getDelta() {
     return delta;
   }
@@ -101,6 +101,7 @@ public abstract class Neuron<M extends Writable> implements Writable, NeuronInte
   // ////////
 
   private int i;
+  float[] weights;
 
   public void push(float weight) {
     weights[i++] = weight;
@@ -109,8 +110,6 @@ public abstract class Neuron<M extends Writable> implements Writable, NeuronInte
   public float getUpdate() {
     return weight;
   }
-
-  float[] weights;
 
   public void setWeightVector(int rowCount) {
     i = 0;
@@ -121,8 +120,20 @@ public abstract class Neuron<M extends Writable> implements Writable, NeuronInte
     return weights;
   }
 
+  public void setWeights(float[] weights) {
+    this.weights = weights;
+  }
+
   public void setSquashingFunction(FloatFunction squashingFunction) {
     this.squashingFunction = squashingFunction;
+  }
+
+  public void setTraining(boolean b) {
+    this.isTraining = b;
+  }
+
+  public boolean isTraining() {
+    return isTraining;
   }
 
   @Override
@@ -131,9 +142,12 @@ public abstract class Neuron<M extends Writable> implements Writable, NeuronInte
     output = in.readFloat();
     weight = in.readFloat();
     delta = in.readFloat();
+    iterations = in.readLong();
 
     momentumWeight = in.readFloat();
     learningRate = in.readFloat();
+    isTraining = in.readBoolean();
+    isDropped = in.readBoolean();
   }
 
   @Override
@@ -142,9 +156,39 @@ public abstract class Neuron<M extends Writable> implements Writable, NeuronInte
     out.writeFloat(output);
     out.writeFloat(weight);
     out.writeFloat(delta);
-    
+    out.writeLong(iterations);
+
     out.writeFloat(momentumWeight);
     out.writeFloat(learningRate);
+    out.writeBoolean(isTraining);
+    out.writeBoolean(isDropped);
+  }
+
+  public void setIterationNumber(long iterations) {
+    this.iterations = iterations;
+  }
+
+  public long getIterationNumber() {
+    return iterations;
+  }
+
+  public boolean isDropped() {
+    return isDropped;
+  }
+
+  public void setDrop(boolean isDropped) {
+    this.isDropped = isDropped;
+  }
+  
+  private float nablaW;
+
+  public void setNablaW(float f) {
+    // TODO Auto-generated method stub
+    nablaW = f;
+  }
+  
+  public float getNablaW() {
+    return nablaW;
   }
 
 }

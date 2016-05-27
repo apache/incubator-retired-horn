@@ -155,7 +155,7 @@ abstract class AbstractLayeredNeuralNetwork extends AbstractNeuralNetwork {
    * @return The layer index, starts with 0.
    */
   public abstract int addLayer(int size, boolean isFinalLayer,
-      FloatFunction squashingFunction, Class<? extends Neuron> neuronClass);
+      FloatFunction squashingFunction, Class<? extends Neuron<?>> neuronClass);
 
   /**
    * Get the size of a particular layer.

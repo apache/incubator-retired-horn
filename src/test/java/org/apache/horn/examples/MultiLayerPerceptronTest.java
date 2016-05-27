@@ -171,7 +171,7 @@ public class MultiLayerPerceptronTest extends HamaCluster {
       job.setTrainingSetPath(SEQTRAIN_DATA);
       job.setModelPath(MODEL_PATH);
 
-      job.setMaxIteration(1000);
+      job.setMaxIteration(1);
       job.setLearningRate(0.4f);
       job.setMomentumWeight(0.2f);
       job.setRegularizationWeight(0.001f);
@@ -181,7 +181,7 @@ public class MultiLayerPerceptronTest extends HamaCluster {
 
       job.setTrainingMethod(TrainingMethod.GRADIENT_DESCENT);
 
-      job.inputLayer(featureDimension, Sigmoid.class, StandardNeuron.class);
+      job.inputLayer(featureDimension, 0.8f);
       job.addLayer(featureDimension, Sigmoid.class, StandardNeuron.class);
       job.outputLayer(labelDimension, Sigmoid.class, StandardNeuron.class);
 

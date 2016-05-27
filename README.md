@@ -23,10 +23,10 @@ Then, we measure the margin of error of the output and adjust the weights accord
     public void backward(
         Iterable<Synapse<FloatWritable, FloatWritable>> messages)
         throws IOException {
-      float gradient = 0;
+      float delta = 0;
       for (Synapse<FloatWritable, FloatWritable> m : messages) {
         // Calculates error gradient for each neuron
-        gradient += (m.getDelta() * m.getWeight());
+        delta += (m.getDelta() * m.getWeight());
 
         // Weight corrections
         float weight = -this.getLearningRate() * this.getOutput()
@@ -34,23 +34,22 @@ Then, we measure the margin of error of the output and adjust the weights accord
         this.push(weight);
       }
 
-      this.backpropagate(gradient
+      this.backpropagate(delta
           * this.squashingFunction.applyDerivative(this.getOutput()));
     }
   }
 ```
 The advantages of this programming model is easy and intuitive to use.
 
-Also, Apache Horn provides a simplified and intuitive configuration interface. To create neural network job and submit it to existing Hadoop or Hama cluster, we just add the layer with its properties such as squashing function and neuron class. The below example configures the create 2-layer neural network with 100 neurons in hidden layers for train MNIST dataset:
+Also, Apache Horn provides a simplified and intuitive configuration interface. To create neural network job and submit it to existing Hadoop or Hama cluster, we just add the layer with its properties such as squashing function and neuron class. The below example configures the create 2-layer neural network for train MNIST dataset:
 ```Java
   HornJob job = new HornJob(conf, MultiLayerPerceptron.class);
   job.setLearningRate(learningRate);
-  job.setTrainingMethod(TrainingMethod.GRADIENT_DESCENT);
   ..
 
-  job.inputLayer(784, Sigmoid.class, StandardNeuron.class);
-  job.addLayer(100, Sigmoid.class, StandardNeuron.class);
-  job.outputLayer(10, SoftMax.class, StandardNeuron.class);
+  job.inputLayer(features, 0.8f); // droprate
+  job.addLayer(hu, ReLU.class, DropoutNeuron.class);
+  job.outputLayer(labels, SoftMax.class, StandardNeuron.class);
   job.setCostFunction(CrossEntropy.class);
 ```
 
@@ -68,7 +67,7 @@ Then, train it with following command (in this example, we used η 0.01, α 0.9,
    0.01 0.9 0.0005 784 100 10 10 12000
 ```
 
-With this default example, you'll reach over the 95% accuracy. In local mode, 6 tasks will train the model in synchronous parallel fashion and will took around 30 mins. 
+With this default example, you'll reach over the 95% accuracy. In local mode, 20 tasks will train the model in synchronous parallel fashion and will took around 10 mins. 
 
 ## High Scalability
 

@@ -49,6 +49,10 @@ public class MNISTConverter {
     String labels_data = args[1];
     String output = args[2];
 
+    HamaConfiguration conf = new HamaConfiguration();
+    conf.set("dfs.block.size", "11554432");
+    FileSystem fs = FileSystem.get(conf);
+
     DataInputStream imagesIn = new DataInputStream(new FileInputStream(
         new File(training_data)));
     DataInputStream labelsIn = new DataInputStream(new FileInputStream(
@@ -69,9 +73,6 @@ public class MNISTConverter {
       imagesIn.readFully(images[n]);
       labels[n] = labelsIn.readByte();
     }
-
-    HamaConfiguration conf = new HamaConfiguration();
-    FileSystem fs = FileSystem.get(conf);
 
     @SuppressWarnings("deprecation")
     SequenceFile.Writer writer = new SequenceFile.Writer(fs, conf, new Path(

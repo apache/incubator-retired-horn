@@ -30,7 +30,7 @@ public class ExampleDriver {
 			pgd.addClass("MNISTConverter", MNISTConverter.class,
 					"A utility program that converts MNIST training and label datasets into HDFS sequence file.");
 			pgd.addClass("MNISTEvaluator", MNISTEvaluator.class,
-					"A utility program that evaluates trained model for the MNIST dataset");
+					"A utility program that evaluates trained model for the MNIST dataset.");
 			pgd.addClass("MultiLayerPerceptron", MultiLayerPerceptron.class,
 					"An example program that trains a multilayer perceptron model from HDFS sequence file.");
 			exitCode = pgd.run(args);

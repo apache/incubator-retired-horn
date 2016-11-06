@@ -70,6 +70,8 @@ abstract class AbstractLayeredNeuralNetwork extends AbstractNeuralNetwork {
 
   protected LearningStyle learningStyle;
 
+  protected float dropRate;
+
   public AbstractLayeredNeuralNetwork() {
     this.regularizationWeight = DEFAULT_REGULARIZATION_WEIGHT;
     this.momentumWeight = DEFAULT_MOMENTUM_WEIGHT;
@@ -257,6 +259,10 @@ abstract class AbstractLayeredNeuralNetwork extends AbstractNeuralNetwork {
 
     WritableUtils.writeEnum(output, this.trainingMethod);
     WritableUtils.writeEnum(output, this.learningStyle);
+  }
+
+  public void setDropRateOfInputLayer(float dropRate) {
+    this.dropRate = dropRate;
   }
 
 }

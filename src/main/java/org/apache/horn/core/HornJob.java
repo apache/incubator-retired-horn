@@ -28,8 +28,9 @@ import org.apache.horn.funcs.FunctionFactory;
 
 public class HornJob extends BSPJob {
 
-  LayeredNeuralNetwork neuralNetwork;
+  AbstractLayeredNeuralNetwork neuralNetwork;
 
+  @Deprecated
   public HornJob(HamaConfiguration conf, Class<?> exampleClass)
       throws IOException {
     super(conf);
@@ -38,6 +39,17 @@ public class HornJob extends BSPJob {
     // default local file block size 10mb
     this.getConfiguration().set("fs.local.block.size", "10358951");
     neuralNetwork = new LayeredNeuralNetwork();
+  }
+
+  public HornJob(HamaConfiguration conf,
+      Class<? extends AbstractLayeredNeuralNetwork> neuralNetworkClass,
+      Class<?> exampleClass)
+      throws IOException, InstantiationException, IllegalAccessException {
+    this.setJarByClass(exampleClass);
+
+    // default local file block size 10mb
+    this.getConfiguration().set("fs.local.block.size", "10358951");
+    neuralNetwork = neuralNetworkClass.newInstance();
   }
 
   public void inputLayer(int featureDimension) {
@@ -106,7 +118,7 @@ public class HornJob extends BSPJob {
     this.neuralNetwork.setRegularizationWeight(regularizationWeight);
   }
 
-  public LayeredNeuralNetwork getNeuralNetwork() {
+  public AbstractLayeredNeuralNetwork getNeuralNetwork() {
     return neuralNetwork;
   }
 

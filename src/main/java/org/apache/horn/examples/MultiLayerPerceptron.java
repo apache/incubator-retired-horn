@@ -23,6 +23,7 @@ import org.apache.hadoop.io.FloatWritable;
 import org.apache.hama.HamaConfiguration;
 import org.apache.horn.core.Constants.TrainingMethod;
 import org.apache.horn.core.HornJob;
+import org.apache.horn.core.LayeredNeuralNetwork;
 import org.apache.horn.core.Neuron;
 import org.apache.horn.core.Synapse;
 import org.apache.horn.funcs.CrossEntropy;
@@ -69,9 +70,9 @@ public class MultiLayerPerceptron {
   public static HornJob createJob(HamaConfiguration conf, String modelPath,
       String inputPath, float learningRate, float momemtumWeight,
       float regularizationWeight, int features, int hu, int labels,
-      int miniBatch, int maxIteration) throws IOException {
+      int miniBatch, int maxIteration) throws IOException, InstantiationException, IllegalAccessException {
 
-    HornJob job = new HornJob(conf, MultiLayerPerceptron.class);
+    HornJob job = new HornJob(conf, LayeredNeuralNetwork.class, MultiLayerPerceptron.class);
     job.setTrainingSetPath(inputPath);
     job.setModelPath(modelPath);
 
@@ -95,7 +96,7 @@ public class MultiLayerPerceptron {
   }
 
   public static void main(String[] args) throws IOException,
-      InterruptedException, ClassNotFoundException {
+      InterruptedException, ClassNotFoundException, NumberFormatException, InstantiationException, IllegalAccessException {
     if (args.length < 9) {
       System.out.println("Usage: <MODEL_PATH> <INPUT_PATH> "
           + "<LEARNING_RATE> <MOMEMTUM_WEIGHT> <REGULARIZATION_WEIGHT> "

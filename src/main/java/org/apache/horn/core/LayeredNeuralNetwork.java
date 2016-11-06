@@ -87,7 +87,6 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
 
   private List<Neuron<?>[]> neurons = new ArrayList<Neuron<?>[]>();
 
-  private float dropRate;
   private long iterations;
 
   public LayeredNeuralNetwork() {

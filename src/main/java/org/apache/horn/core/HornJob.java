@@ -62,6 +62,11 @@ public class HornJob extends BSPJob {
     neuralNetwork.setDropRateOfInputLayer(dropRate);
   }
 
+  public void inputLayer(int featureDimension, float dropRate, Class<? extends Neuron<?>> neuronClass) {
+    addLayer(featureDimension, null, neuronClass);
+    neuralNetwork.setDropRateOfInputLayer(dropRate);
+  }
+
   public void addLayer(int featureDimension, Class<? extends Function> func,
       Class<? extends Neuron<?>> neuronClass) {
     neuralNetwork.addLayer(
@@ -71,10 +76,35 @@ public class HornJob extends BSPJob {
             .getSimpleName()) : null, neuronClass);
   }
 
+  /**
+   * TODO: Adds comments
+   * @param featureDimension
+   * @param class1
+   * @param neuronClass
+   */
+  public void addLayer(int featureDimension, Class<? extends Function> func,
+      Class<? extends Neuron<?>> neuronClass, boolean isRecurrent) {
+    if (neuralNetwork instanceof RecurrentLayeredNeuralNetwork) {
+        ((RecurrentLayeredNeuralNetwork)neuralNetwork).addLayer(
+            featureDimension,
+            false,
+            (func != null) ? FunctionFactory.createFloatFunction(func
+                .getSimpleName()) : null, neuronClass, null, isRecurrent);
+    } else {
+      this.addLayer(featureDimension, func, neuronClass);
+    }
+  }
+
   public void outputLayer(int labels, Class<? extends Function> func,
       Class<? extends Neuron<?>> neuronClass) {
     neuralNetwork.addLayer(labels, true,
         FunctionFactory.createFloatFunction(func.getSimpleName()), neuronClass);
+  }
+
+  public void outputLayer(int labels, Class<? extends Function> func,
+      Class<? extends Neuron<?>> neuronClass, int numOutCells) {
+    ((RecurrentLayeredNeuralNetwork)neuralNetwork).addLayer(labels, true,
+        FunctionFactory.createFloatFunction(func.getSimpleName()), neuronClass, numOutCells);
   }
 
   public void setCostFunction(Class<? extends Function> func) {
@@ -92,6 +122,11 @@ public class HornJob extends BSPJob {
 
   public void setBatchSize(int batchSize) {
     this.conf.setInt("training.batch.size", batchSize);
+  }
+
+  public void setRecurrentStepSize(int stepSize) {
+    ((RecurrentLayeredNeuralNetwork) neuralNetwork).setRecurrentStepSize(stepSize);
+    this.conf.setInt("training.recurrent.step.size", stepSize);
   }
 
   public void setTrainingMethod(TrainingMethod method) {

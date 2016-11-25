@@ -15,13 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.horn.examples;
+package org.apache.horn.core;
 
 import java.io.IOException;
 
 import org.apache.hadoop.io.FloatWritable;
-import org.apache.horn.core.Neuron;
-import org.apache.horn.core.Synapse;
 import org.apache.horn.utils.MathUtils;
 
 public class DropoutNeuron extends

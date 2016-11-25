@@ -22,16 +22,16 @@ import java.io.IOException;
 import org.apache.hadoop.io.FloatWritable;
 import org.apache.hama.HamaConfiguration;
 import org.apache.horn.core.Constants.TrainingMethod;
-import org.apache.horn.core.DropoutNeuron;
 import org.apache.horn.core.HornJob;
-import org.apache.horn.core.LayeredNeuralNetwork;
 import org.apache.horn.core.Neuron;
+import org.apache.horn.core.RecurrentDropoutNeuron;
+import org.apache.horn.core.RecurrentLayeredNeuralNetwork;
 import org.apache.horn.core.Synapse;
-import org.apache.horn.funcs.CrossEntropy;
-import org.apache.horn.funcs.ReLU;
 import org.apache.horn.funcs.SoftMax;
+import org.apache.horn.funcs.SquaredError;
+import org.apache.horn.funcs.Tanh;
 
-public class MultiLayerPerceptron {
+public class ExclusiveOrRecurrentMultiLayerPerceptron {
 
   public static class StandardNeuron extends
       Neuron<Synapse<FloatWritable, FloatWritable>> {
@@ -71,9 +71,13 @@ public class MultiLayerPerceptron {
   public static HornJob createJob(HamaConfiguration conf, String modelPath,
       String inputPath, float learningRate, float momemtumWeight,
       float regularizationWeight, int features, int hu, int labels,
-      int miniBatch, int maxIteration) throws IOException, InstantiationException, IllegalAccessException {
+      int stepSize, int numOutCells, int miniBatch, int maxIteration)
+          throws IOException, InstantiationException, IllegalAccessException {
 
-    HornJob job = new HornJob(conf, LayeredNeuralNetwork.class, MultiLayerPerceptron.class);
+    boolean isRecurrent = (stepSize == 1 ? false: true);
+
+    HornJob job = new HornJob(
+        conf, RecurrentLayeredNeuralNetwork.class, ExclusiveOrRecurrentMultiLayerPerceptron.class);
     job.setTrainingSetPath(inputPath);
     job.setModelPath(modelPath);
 
@@ -82,38 +86,44 @@ public class MultiLayerPerceptron {
     job.setMomentumWeight(momemtumWeight);
     job.setRegularizationWeight(regularizationWeight);
 
-    job.setConvergenceCheckInterval(100);
+    job.setConvergenceCheckInterval(10);
     job.setBatchSize(miniBatch);
+    job.setRecurrentStepSize(stepSize);
 
     job.setTrainingMethod(TrainingMethod.GRADIENT_DESCENT);
 
-    job.inputLayer(features, 0.8f); // droprate
-    job.addLayer(hu, ReLU.class, DropoutNeuron.class);
-    job.outputLayer(labels, SoftMax.class, StandardNeuron.class);
+    job.inputLayer(features, 1.0f); // droprate
+    job.addLayer(hu, Tanh.class, RecurrentDropoutNeuron.class, isRecurrent);
+    job.addLayer(hu, Tanh.class, RecurrentDropoutNeuron.class, isRecurrent);
+    job.outputLayer(labels, SoftMax.class, RecurrentDropoutNeuron.class, numOutCells);
 
-    job.setCostFunction(CrossEntropy.class);
+    job.setCostFunction(SquaredError.class);
 
     return job;
   }
 
   public static void main(String[] args) throws IOException,
-      InterruptedException, ClassNotFoundException, NumberFormatException, InstantiationException, IllegalAccessException {
+      InterruptedException, ClassNotFoundException,
+      NumberFormatException, InstantiationException, IllegalAccessException {
     if (args.length < 9) {
       System.out.println("Usage: <MODEL_PATH> <INPUT_PATH> "
           + "<LEARNING_RATE> <MOMEMTUM_WEIGHT> <REGULARIZATION_WEIGHT> "
           + "<FEATURE_DIMENSION> <HIDDEN_UNITS> <LABEL_DIMENSION> "
-          + "<BATCH_SIZE> <MAX_ITERATION>");
+          + "<STEP_SIZE> <NUM_OUTPUTCELLS> <BATCH_SIZE> <MAX_ITERATION>");
+      System.out.println("E.g. MnistRecurrentMultiLayerPerceptron"
+          + " ./model_semi_rnn semi.seq 0.01 0.9 0.0005 1 2 2 2 1 10 10000");
       System.exit(-1);
     }
 
-    HornJob ann = createJob(new HamaConfiguration(), args[0], args[1],
+    HornJob rnn = createJob(new HamaConfiguration(), args[0], args[1],
         Float.parseFloat(args[2]), Float.parseFloat(args[3]),
         Float.parseFloat(args[4]), Integer.parseInt(args[5]),
         Integer.parseInt(args[6]), Integer.parseInt(args[7]),
-        Integer.parseInt(args[8]), Integer.parseInt(args[9]));
+        Integer.parseInt(args[8]), Integer.parseInt(args[9]),
+        Integer.parseInt(args[10]), Integer.parseInt(args[11]));
 
     long startTime = System.currentTimeMillis();
-    if (ann.waitForCompletion(true)) {
+    if (rnn.waitForCompletion(true)) {
       System.out.println("Optimization Finished! "
           + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
     }

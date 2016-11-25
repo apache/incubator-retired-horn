@@ -18,6 +18,7 @@
 package org.apache.horn.examples;
 
 import org.apache.hadoop.util.ProgramDriver;
+import org.apache.horn.utils.ExclusiveOrConverter;
 import org.apache.horn.utils.MNISTConverter;
 import org.apache.horn.utils.MNISTEvaluator;
 
@@ -32,12 +33,26 @@ public class ExampleDriver {
           MNISTConverter.class,
           "A utility program that converts MNIST training and label datasets "
           + "into HDFS sequence file.");
-      pgd.addClass("MNISTEvaluator", MNISTEvaluator.class,
+      pgd.addClass("MNISTEvaluator",
+          MNISTEvaluator.class,
           "A utility program that evaluates trained model for the MNIST dataset");
       pgd.addClass(
           "MultiLayerPerceptron",
           MultiLayerPerceptron.class,
           "An example program that trains a multilayer perceptron model from HDFS sequence file.");
+      pgd.addClass("ExclusiveOrConverter",
+          ExclusiveOrConverter.class,
+          "A utility program that converts ExclusiveOR training and label datasets ");
+      pgd.addClass(
+          "ExclusiveOrRecurrentMultiLayerPerceptron",
+          ExclusiveOrRecurrentMultiLayerPerceptron.class,
+          "An example program that trains a recurrent multilayer perceptron model with exclusive or"
+          + " from HDFS sequence file.");
+      pgd.addClass(
+          "MnistRecurrentMultiLayerPerceptron",
+          MnistRecurrentMultiLayerPerceptron.class,
+          "An example program that trains a recurrent multilayer perceptron model with MNIST"
+          + " from HDFS sequence file.");
       exitCode = pgd.run(args);
     } catch (Throwable e) {
       e.printStackTrace();

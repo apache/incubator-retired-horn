@@ -19,54 +19,15 @@ package org.apache.horn.examples;
 
 import java.io.IOException;
 
-import org.apache.hadoop.io.FloatWritable;
 import org.apache.hama.HamaConfiguration;
 import org.apache.horn.core.Constants.TrainingMethod;
 import org.apache.horn.core.HornJob;
-import org.apache.horn.core.Neuron;
-import org.apache.horn.core.RecurrentDropoutNeuron;
 import org.apache.horn.core.RecurrentLayeredNeuralNetwork;
-import org.apache.horn.core.Synapse;
 import org.apache.horn.funcs.CrossEntropy;
-import org.apache.horn.funcs.ReLU;
 import org.apache.horn.funcs.SoftMax;
 import org.apache.horn.funcs.Tanh;
 
 public class MnistRecurrentMultiLayerPerceptron {
-
-  public static class StandardNeuron extends
-      Neuron<Synapse<FloatWritable, FloatWritable>> {
-
-    @Override
-    public void forward(Iterable<Synapse<FloatWritable, FloatWritable>> messages)
-        throws IOException {
-      float sum = 0;
-      for (Synapse<FloatWritable, FloatWritable> m : messages) {
-        sum += m.getInput() * m.getWeight();
-      }
-      this.feedforward(squashingFunction.apply(sum));
-    }
-
-    @Override
-    public void backward(
-        Iterable<Synapse<FloatWritable, FloatWritable>> messages)
-        throws IOException {
-      float delta = 0;
-
-      if (!this.isDropped()) {
-        for (Synapse<FloatWritable, FloatWritable> m : messages) {
-          // Calculates error gradient for each neuron
-          delta += (m.getDelta() * m.getWeight());
-
-          // Weight corrections
-          float weight = -this.getLearningRate() * m.getDelta()
-              * this.getOutput() + this.getMomentumWeight() * m.getPrevWeight();
-          this.push(weight);
-        }
-      }
-      this.backpropagate(delta * squashingFunction.applyDerivative(getOutput()));
-    }
-  }
 
   public static HornJob createJob(HamaConfiguration conf, String modelPath,
       String inputPath, float learningRate, float momemtumWeight,

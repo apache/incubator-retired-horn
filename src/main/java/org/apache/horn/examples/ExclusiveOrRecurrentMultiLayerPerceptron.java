@@ -19,65 +19,26 @@ package org.apache.horn.examples;
 
 import java.io.IOException;
 
-import org.apache.hadoop.io.FloatWritable;
 import org.apache.hama.HamaConfiguration;
 import org.apache.horn.core.Constants.TrainingMethod;
 import org.apache.horn.core.HornJob;
-import org.apache.horn.core.Neuron;
-import org.apache.horn.core.RecurrentDropoutNeuron;
 import org.apache.horn.core.RecurrentLayeredNeuralNetwork;
-import org.apache.horn.core.Synapse;
 import org.apache.horn.funcs.SoftMax;
 import org.apache.horn.funcs.SquaredError;
 import org.apache.horn.funcs.Tanh;
 
 public class ExclusiveOrRecurrentMultiLayerPerceptron {
 
-  public static class StandardNeuron extends
-      Neuron<Synapse<FloatWritable, FloatWritable>> {
-
-    @Override
-    public void forward(Iterable<Synapse<FloatWritable, FloatWritable>> messages)
-        throws IOException {
-      float sum = 0;
-      for (Synapse<FloatWritable, FloatWritable> m : messages) {
-        sum += m.getInput() * m.getWeight();
-      }
-      this.feedforward(squashingFunction.apply(sum));
-    }
-
-    @Override
-    public void backward(
-        Iterable<Synapse<FloatWritable, FloatWritable>> messages)
-        throws IOException {
-      float delta = 0;
-
-      if (!this.isDropped()) {
-        for (Synapse<FloatWritable, FloatWritable> m : messages) {
-          // Calculates error gradient for each neuron
-          delta += (m.getDelta() * m.getWeight());
-
-          // Weight corrections
-          float weight = -this.getLearningRate() * m.getDelta()
-              * this.getOutput() + this.getMomentumWeight() * m.getPrevWeight();
-          this.push(weight);
-        }
-      }
-
-      this.backpropagate(delta * squashingFunction.applyDerivative(getOutput()));
-    }
-  }
-
   public static HornJob createJob(HamaConfiguration conf, String modelPath,
       String inputPath, float learningRate, float momemtumWeight,
       float regularizationWeight, int features, int hu, int labels,
       int stepSize, int numOutCells, int miniBatch, int maxIteration)
-          throws IOException, InstantiationException, IllegalAccessException {
+      throws IOException, InstantiationException, IllegalAccessException {
 
-    boolean isRecurrent = (stepSize == 1 ? false: true);
+    boolean isRecurrent = (stepSize == 1 ? false : true);
 
-    HornJob job = new HornJob(
-        conf, RecurrentLayeredNeuralNetwork.class, ExclusiveOrRecurrentMultiLayerPerceptron.class);
+    HornJob job = new HornJob(conf, RecurrentLayeredNeuralNetwork.class,
+        ExclusiveOrRecurrentMultiLayerPerceptron.class);
     job.setTrainingSetPath(inputPath);
     job.setModelPath(modelPath);
 
@@ -95,7 +56,8 @@ public class ExclusiveOrRecurrentMultiLayerPerceptron {
     job.inputLayer(features, 1.0f); // droprate
     job.addLayer(hu, Tanh.class, RecurrentDropoutNeuron.class, isRecurrent);
     job.addLayer(hu, Tanh.class, RecurrentDropoutNeuron.class, isRecurrent);
-    job.outputLayer(labels, SoftMax.class, RecurrentDropoutNeuron.class, numOutCells);
+    job.outputLayer(labels, SoftMax.class, RecurrentDropoutNeuron.class,
+        numOutCells);
 
     job.setCostFunction(SquaredError.class);
 
@@ -103,8 +65,8 @@ public class ExclusiveOrRecurrentMultiLayerPerceptron {
   }
 
   public static void main(String[] args) throws IOException,
-      InterruptedException, ClassNotFoundException,
-      NumberFormatException, InstantiationException, IllegalAccessException {
+      InterruptedException, ClassNotFoundException, NumberFormatException,
+      InstantiationException, IllegalAccessException {
     if (args.length < 9) {
       System.out.println("Usage: <MODEL_PATH> <INPUT_PATH> "
           + "<LEARNING_RATE> <MOMEMTUM_WEIGHT> <REGULARIZATION_WEIGHT> "

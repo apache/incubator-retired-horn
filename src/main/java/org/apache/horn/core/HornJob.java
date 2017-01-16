@@ -62,13 +62,13 @@ public class HornJob extends BSPJob {
     neuralNetwork.setDropRateOfInputLayer(dropRate);
   }
 
-  public void inputLayer(int featureDimension, float dropRate, Class<? extends Neuron<?>> neuronClass) {
+  public void inputLayer(int featureDimension, float dropRate, Class<? extends Neuron> neuronClass) {
     addLayer(featureDimension, null, neuronClass);
     neuralNetwork.setDropRateOfInputLayer(dropRate);
   }
 
   public void addLayer(int featureDimension, Class<? extends Function> func,
-      Class<? extends Neuron<?>> neuronClass) {
+      Class<? extends Neuron> neuronClass) {
     neuralNetwork.addLayer(
         featureDimension,
         false,
@@ -83,7 +83,7 @@ public class HornJob extends BSPJob {
    * @param neuronClass
    */
   public void addLayer(int featureDimension, Class<? extends Function> func,
-      Class<? extends Neuron<?>> neuronClass, boolean isRecurrent) {
+      Class<? extends Neuron> neuronClass, boolean isRecurrent) {
     if (neuralNetwork instanceof RecurrentLayeredNeuralNetwork) {
         ((RecurrentLayeredNeuralNetwork)neuralNetwork).addLayer(
             featureDimension,
@@ -96,13 +96,13 @@ public class HornJob extends BSPJob {
   }
 
   public void outputLayer(int labels, Class<? extends Function> func,
-      Class<? extends Neuron<?>> neuronClass) {
+      Class<? extends Neuron> neuronClass) {
     neuralNetwork.addLayer(labels, true,
         FunctionFactory.createFloatFunction(func.getSimpleName()), neuronClass);
   }
 
   public void outputLayer(int labels, Class<? extends Function> func,
-      Class<? extends Neuron<?>> neuronClass, int numOutCells) {
+      Class<? extends Neuron> neuronClass, int numOutCells) {
     ((RecurrentLayeredNeuralNetwork)neuralNetwork).addLayer(labels, true,
         FunctionFactory.createFloatFunction(func.getSimpleName()), neuronClass, numOutCells);
   }

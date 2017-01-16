@@ -1,41 +1,27 @@
 # Apache Horn
 
-The Apache Horn is an Apache Incubating project, a neuron-centric programming model and Sync and Async hybrid distributed training framework, supports both data and model parallelism for training large models with massive datasets on top of Apache Hadoop and Hama.
+The Apache Horn is an Apache Incubating project, a neuron-centric programming model and Sync and Async hybrid distributed training framework, supports both data and model parallelism for training large models with massive datasets on top of Apache Hadoop and Hama (See https://arxiv.org/abs/1608.00781).
 
 ## Programming Model
 
 Apache Horn provides a neuron-centric programming model for implementing the neural network based algorithms. The user defines the computation that takes place at each neuron in each layer of the model, and the messages that should be passed during the forward and backward phases of computation. For example, we apply a set of weights to the input data and calculate an output in forward() method like below:
 ```Java
     @Override
-    public void forward(
-        Iterable<Synapse<FloatWritable, FloatWritable>> messages)
-        throws IOException {
-      float sum = 0;
-      for (Synapse<FloatWritable, FloatWritable> m : messages) {
-        sum += m.getInput() * m.getWeight();
-      }
-      this.feedforward(this.squashingFunction.apply(sum));
+    public void forward(FloatVector inputVector) throws IOException {
+      float sum = input.multiply(getWeightVector()).sum();
+      feedforward(squashingFunction.apply(sum));
     }
 ```
 Then, we measure the margin of error of the output and adjust the weights accordingly to decrease the error in backward() method:
 ```Java
     @Override
-    public void backward(
-        Iterable<Synapse<FloatWritable, FloatWritable>> messages)
-        throws IOException {
-      float delta = 0;
-      for (Synapse<FloatWritable, FloatWritable> m : messages) {
-        // Calculates error gradient for each neuron
-        delta += (m.getDelta() * m.getWeight());
-
-        // Weight corrections
-        float weight = -this.getLearningRate() * this.getOutput()
-            * m.getDelta() + this.getMomentumWeight() * m.getPrevWeight();
-        this.push(weight);
-      }
-
-      this.backpropagate(delta
-          * this.squashingFunction.applyDerivative(this.getOutput()));
+    public void backward(FloatVector deltaVector) throws IOException {
+      float delta = getWeightVector().multiply(deltaVector).sum();
+      
+      // weight corrections
+      pushUpdates(deltaVector.multiply(-getLearningRate() * getOutput())
+          .add(getPrevWeightVector().multiply(getMomentumWeight())));
+      backpropagate(delta * squashingFunction.applyDerivative(getOutput()));
     }
   }
 ```
@@ -61,13 +47,13 @@ Download a MNIST training and label datasets, and convert into a HDFS sequence f
    train-images.idx3-ubyte train-labels.idx1-ubyte /tmp/mnist.seq 
 ```
 
-Then, train it with following command (in this example, we used η 0.01, α 0.9, λ 0.0005, 100 hidden units, and minibatch 10):
+Then, train it with following command (in this example, we used η 0.2, α 0.98, λ 0.0005, 100 hidden units, and minibatch 10):
 ```
  % bin/horn jar horn-0.x.0.jar MultiLayerPerceptron /tmp/model /tmp/mnist.seq \
-   0.01 0.9 0.0005 784 100 10 10 12000
+   0.2 0.98 0.0005 784 100 10 10 1200
 ```
 
-With this default example, you'll reach over the 95% accuracy. In local mode, 20 tasks will train the model in synchronous parallel fashion and will took around 10 mins. 
+With this default example, you'll reach over the 91~97% accuracy. In local mode, 20 tasks will train the model in synchronous parallel fashion and will took around few mins. 
 
 ## High Scalability
 

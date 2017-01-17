@@ -18,12 +18,12 @@
 package org.apache.horn.core;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 import junit.framework.TestCase;
 
 import org.apache.hadoop.io.FloatWritable;
+import org.apache.hama.commons.math.DenseFloatVector;
+import org.apache.hama.commons.math.FloatVector;
 import org.apache.horn.funcs.CrossEntropy;
 import org.apache.horn.funcs.Sigmoid;
 
@@ -32,26 +32,23 @@ public class TestNeuron extends TestCase {
   private static float bias = -1;
   private static float theta = 0.8f;
 
-  public static class MyNeuron extends
-      Neuron<Synapse<FloatWritable, FloatWritable>> {
+  public static class MyNeuron extends Neuron {
 
     @Override
-    public void forward(
-        Iterable<Synapse<FloatWritable, FloatWritable>> messages)
-        throws IOException {
+    public void forward(FloatVector input) throws IOException {
       float sum = 0;
-      for (Synapse<FloatWritable, FloatWritable> m : messages) {
-        sum += m.getInput() * m.getWeight();
-      }
+      sum += input.multiply(this.getWeightVector()).sum();
       sum += (bias * theta);
       System.out.println(new CrossEntropy().apply(0.000001f, 1.0f));
       this.feedforward(new Sigmoid().apply(sum));
     }
-    
+
     @Override
     public void backward(
-        Iterable<Synapse<FloatWritable, FloatWritable>> messages)
+        FloatVector deltaVector)
         throws IOException {
+      float delta = this.getWeightVector().multiply(deltaVector).sum();
+      /*
       for (Synapse<FloatWritable, FloatWritable> m : messages) {
         // Calculates error gradient for each neuron
         float gradient = new Sigmoid().applyDerivative(this.getOutput())
@@ -65,25 +62,29 @@ public class TestNeuron extends TestCase {
         assertEquals(-0.006688235f, weight);
         // this.push(weight);
       }
+      */
     }
 
   }
 
   public void testProp() throws IOException {
-    List<Synapse<FloatWritable, FloatWritable>> x = new ArrayList<Synapse<FloatWritable, FloatWritable>>();
-    x.add(new Synapse<FloatWritable, FloatWritable>(0, new FloatWritable(1.0f),
-        new FloatWritable(0.5f)));
-    x.add(new Synapse<FloatWritable, FloatWritable>(0, new FloatWritable(1.0f),
-        new FloatWritable(0.4f)));
-
+    FloatVector x = new DenseFloatVector(2);
+    x.set(0, 1.0f);
+    x.set(1, 1.0f);
+    FloatVector w = new DenseFloatVector(2);
+    w.set(0, 0.5f);
+    w.set(1, 0.4f);
+    
     MyNeuron n = new MyNeuron();
+    n.setWeightVector(w);
     n.forward(x);
     assertEquals(0.5249792f, n.getOutput());
 
+    /*
     x.clear();
-    x.add(new Synapse<FloatWritable, FloatWritable>(0, new FloatWritable(
-        -0.1274f), new FloatWritable(-1.2f)));
+    x.add(new Synapse<FloatWritable, FloatWritable>(0, new FloatWritable(-0.1274f), new FloatWritable(-1.2f)));
     n.backward(x);
+    */
   }
 
 }

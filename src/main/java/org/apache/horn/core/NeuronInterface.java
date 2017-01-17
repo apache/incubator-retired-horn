@@ -20,17 +20,18 @@ package org.apache.horn.core;
 import java.io.IOException;
 
 import org.apache.hadoop.io.Writable;
+import org.apache.hama.commons.math.FloatVector;
 
-public interface NeuronInterface<M extends Writable> {
+public interface NeuronInterface {
 
   /**
    * This method is called when the messages are propagated from the next layer.
    * It can be used to calculate the activation or intermediate output.
    * 
-   * @param messages
+   * @param input messages
    * @throws IOException
    */
-  public void forward(Iterable<M> messages) throws IOException;
+  public void forward(FloatVector inputVector) throws IOException;
 
   /**
    * This method is called when the errors are propagated from the previous
@@ -40,6 +41,6 @@ public interface NeuronInterface<M extends Writable> {
    * @param messages
    * @throws IOException
    */
-  public void backward(Iterable<M> messages) throws IOException;
+  public void backward(FloatVector deltaVector) throws IOException;
 
 }

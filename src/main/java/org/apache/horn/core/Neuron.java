@@ -23,9 +23,9 @@ import java.io.IOException;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.commons.math.FloatFunction;
+import org.apache.hama.commons.math.FloatVector;
 
-public abstract class Neuron<M extends Writable> implements Writable,
-    NeuronInterface<M> {
+public abstract class Neuron implements Writable, NeuronInterface {
   int id;
   float output;
   float weight;
@@ -99,29 +99,18 @@ public abstract class Neuron<M extends Writable> implements Writable,
   }
 
   // ////////
-
-  private int i;
   float[] weights;
 
-  public void push(float weight) {
-    weights[i++] = weight;
-  }
-
-  public float getUpdate() {
-    return weight;
-  }
-
   public void setWeightVector(int rowCount) {
-    i = 0;
     weights = new float[rowCount];
   }
 
-  public float[] getWeights() {
+  public float[] getUpdates() {
     return weights;
   }
 
-  public void setWeights(float[] weights) {
-    this.weights = weights;
+  public void pushUpdates(FloatVector weights) {
+    this.weights = weights.toArray();
   }
 
   public void setSquashingFunction(FloatFunction squashingFunction) {
@@ -179,16 +168,48 @@ public abstract class Neuron<M extends Writable> implements Writable,
   public void setDrop(boolean isDropped) {
     this.isDropped = isDropped;
   }
-  
+
   private float nablaW;
 
   public void setNablaW(float f) {
     // TODO Auto-generated method stub
     nablaW = f;
   }
-  
+
   public float getNablaW() {
     return nablaW;
+  }
+
+  
+  
+  
+  /////
+  private FloatVector weightVector;
+  private FloatVector deltaVector;
+  private FloatVector prevWeightVector;
+
+  public void setWeightVector(FloatVector weightVector) {
+    this.weightVector = weightVector;
+  }
+
+  public FloatVector getWeightVector() {
+    return weightVector;
+  }
+
+  public void setDeltaVector(FloatVector deltaVector) {
+    this.deltaVector = deltaVector;
+  }
+
+  public FloatVector getDeltaVector() {
+    return deltaVector;
+  }
+
+  public void setPrevWeightVector(FloatVector prevWeightVector) {
+    this.prevWeightVector = prevWeightVector;
+  }
+
+  public FloatVector getPrevWeightVector() {
+    return prevWeightVector;
   }
 
 }

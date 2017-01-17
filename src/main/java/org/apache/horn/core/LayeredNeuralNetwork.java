@@ -22,7 +22,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 import org.apache.commons.lang.math.RandomUtils;
@@ -30,7 +29,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.WritableUtils;
@@ -81,11 +79,11 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
   /* Different layers can have different squashing function */
   protected List<FloatFunction> squashingFunctionList;
 
-  protected List<Class<? extends Neuron<?>>> neuronClassList;
+  protected List<Class<? extends Neuron>> neuronClassList;
 
   protected int finalLayerIdx;
 
-  private List<Neuron<?>[]> neurons = new ArrayList<Neuron<?>[]>();
+  private List<Neuron[]> neurons = new ArrayList<Neuron[]>();
 
   private long iterations;
 
@@ -112,15 +110,15 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
   private void initializeNeurons(boolean isTraining) {
     for (int i = 0; i < layerSizeList.size(); i++) {
       int numOfNeurons = layerSizeList.get(i);
-      Class<? extends Neuron<?>> neuronClass;
+      Class<? extends Neuron> neuronClass;
       if (i == 0)
         neuronClass = StandardNeuron.class; // actually doesn't needed
       else
         neuronClass = neuronClassList.get(i - 1);
 
-      Neuron<?>[] tmp = new Neuron[numOfNeurons];
+      Neuron[] tmp = new Neuron[numOfNeurons];
       for (int j = 0; j < numOfNeurons; j++) {
-        Neuron<?> n = newNeuronInstance(neuronClass);
+        Neuron n = newNeuronInstance(neuronClass);
         if (i > 0)
           n.setSquashingFunction(squashingFunctionList.get(i - 1));
         else
@@ -144,12 +142,12 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
    * {@inheritDoc}
    */
   public int addLayer(int size, boolean isFinalLayer,
-      FloatFunction squashingFunction, Class<? extends Neuron<?>> neuronClass) {
+      FloatFunction squashingFunction, Class<? extends Neuron> neuronClass) {
     return addLayer(size, isFinalLayer, squashingFunction, neuronClass, null);
   }
 
   public int addLayer(int size, boolean isFinalLayer,
-      FloatFunction squashingFunction, Class<? extends Neuron<?>> neuronClass,
+      FloatFunction squashingFunction, Class<? extends Neuron> neuronClass,
       Class<? extends IntermediateOutput> interlayer) {
     Preconditions.checkArgument(size > 0,
         "Size of layer must be larger than 0.");
@@ -289,7 +287,7 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
     this.neuronClassList = Lists.newArrayList();
     for (int i = 0; i < neuronClasses; ++i) {
       try {
-        Class<? extends Neuron<?>> clazz = (Class<? extends Neuron<?>>) Class
+        Class<? extends Neuron> clazz = (Class<? extends Neuron>) Class
             .forName(input.readUTF());
         neuronClassList.add(clazz);
       } catch (ClassNotFoundException e) {
@@ -327,7 +325,7 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
 
     // write neuron classes
     output.writeInt(this.neuronClassList.size());
-    for (Class<? extends Neuron<?>> clazz : this.neuronClassList) {
+    for (Class<? extends Neuron> clazz : this.neuronClassList) {
       output.writeUTF(clazz.getName());
     }
 
@@ -390,7 +388,7 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
    */
   public FloatVector getOutputInternal(FloatVector instanceWithBias) {
     // sets the output of input layer
-    Neuron<?>[] inputLayer = neurons.get(0);
+    Neuron[] inputLayer = neurons.get(0);
     for (int i = 0; i < inputLayer.length; i++) {
       float m2 = MathUtils.getBinomial(1, dropRate);
       if(m2 == 0)
@@ -418,63 +416,8 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
    * @param neuronClass
    * @return a new neuron instance
    */
-  @SuppressWarnings({ "rawtypes" })
   public static Neuron newNeuronInstance(Class<? extends Neuron> neuronClass) {
     return (Neuron) ReflectionUtils.newInstance(neuronClass);
-  }
-
-  public class InputMessageIterable implements
-      Iterable<Synapse<FloatWritable, FloatWritable>> {
-    private int currNeuronID;
-    private int prevNeuronID;
-    private int end;
-    private FloatMatrix weightMat;
-    private Neuron<?>[] layer;
-
-    public InputMessageIterable(int fromLayer, int row) {
-      this.currNeuronID = row;
-      this.prevNeuronID = -1;
-      this.end = weightMatrixList.get(fromLayer).getColumnCount() - 1;
-      this.weightMat = weightMatrixList.get(fromLayer);
-      this.layer = neurons.get(fromLayer);
-    }
-
-    @Override
-    public Iterator<Synapse<FloatWritable, FloatWritable>> iterator() {
-      return new MessageIterator();
-    }
-
-    private class MessageIterator implements
-        Iterator<Synapse<FloatWritable, FloatWritable>> {
-
-      @Override
-      public boolean hasNext() {
-        if (prevNeuronID < end) {
-          return true;
-        } else {
-          return false;
-        }
-      }
-
-      private FloatWritable i = new FloatWritable();
-      private FloatWritable w = new FloatWritable();
-      private Synapse<FloatWritable, FloatWritable> msg = new Synapse<FloatWritable, FloatWritable>();
-      
-      @Override
-      public Synapse<FloatWritable, FloatWritable> next() {
-        prevNeuronID++;
-
-        i.set(layer[prevNeuronID].getOutput());
-        w.set(weightMat.get(currNeuronID, prevNeuronID));
-        msg.set(prevNeuronID, i, w);
-        return new Synapse<FloatWritable, FloatWritable>(prevNeuronID, i, w);
-      }
-
-      @Override
-      public void remove() {
-      }
-
-    }
   }
 
   /**
@@ -489,17 +432,24 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
     FloatFunction squashingFunction = getSquashingFunction(fromLayer);
     FloatVector vec = new DenseFloatVector(weightMatrix.getRowCount());
 
+    FloatVector inputVector = new DenseFloatVector(neurons.get(fromLayer).length);
+    for(int i = 0; i < neurons.get(fromLayer).length; i++) {
+      inputVector.set(i, neurons.get(fromLayer)[i].getOutput());
+    }
+    
     for (int row = 0; row < weightMatrix.getRowCount(); row++) {
-      Neuron<?> n;
+      Neuron n;
       if (curLayerIdx == finalLayerIdx)
         n = neurons.get(curLayerIdx)[row];
       else
         n = neurons.get(curLayerIdx)[row + 1];
 
       try {
-        Iterable msgs = new InputMessageIterable(fromLayer, row);
+        FloatVector weightVector = weightMatrix.getRowVector(row);
+        n.setWeightVector(weightVector);
+
         n.setIterationNumber(iterations);
-        n.forward(msgs);
+        n.forward(inputVector);
       } catch (IOException e) {
         // TODO Auto-generated catch block
         e.printStackTrace();
@@ -652,75 +602,6 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
     return weightUpdateMatrices;
   }
 
-  public class ErrorMessageIterable implements
-      Iterable<Synapse<FloatWritable, FloatWritable>> {
-    private int row;
-    private int neuronID;
-    private int end;
-    private FloatMatrix weightMat;
-    private FloatMatrix prevWeightMat;
-
-    private float[] nextLayerDelta;
-    
-    public ErrorMessageIterable(int curLayerIdx, int row) {
-      this.row = row;
-      this.neuronID = -1;
-      this.weightMat = weightMatrixList.get(curLayerIdx);
-      this.end = weightMat.getRowCount() - 1;
-      this.prevWeightMat = prevWeightUpdatesList.get(curLayerIdx);
-      
-      Neuron<?>[] nextLayer = neurons.get(curLayerIdx + 1);
-      nextLayerDelta = new float[weightMat.getRowCount()];
-      
-      for(int i = 0; i <= end; ++i) {
-        if (curLayerIdx + 1 == finalLayerIdx) {
-          nextLayerDelta[i] = nextLayer[i].getDelta();
-        } else {
-          nextLayerDelta[i] = nextLayer[i + 1].getDelta();
-        }
-      }
-    }
-
-    @Override
-    public Iterator<Synapse<FloatWritable, FloatWritable>> iterator() {
-      return new MessageIterator();
-    }
-
-    private class MessageIterator implements
-        Iterator<Synapse<FloatWritable, FloatWritable>> {
-
-      @Override
-      public boolean hasNext() {
-        if (neuronID < end) {
-          return true;
-        } else {
-          return false;
-        }
-      }
-
-      private FloatWritable d = new FloatWritable();
-      private FloatWritable w = new FloatWritable();
-      private FloatWritable p = new FloatWritable();
-      private Synapse<FloatWritable, FloatWritable> msg = new Synapse<FloatWritable, FloatWritable>();
-      
-      @Override
-      public Synapse<FloatWritable, FloatWritable> next() {
-        neuronID++;
-        
-        d.set(nextLayerDelta[neuronID]);
-        w.set(weightMat.get(neuronID, row));
-        p.set(prevWeightMat.get(neuronID, row));
-        msg.set(neuronID, d, w, p);
-        return msg;
-      }
-
-      @Override
-      public void remove() {
-      }
-
-    }
-  }
-
   /**
    * Back-propagate the errors to from next layer to current layer. The weight
    * updated information will be stored in the weightUpdateMatrices, and the
@@ -732,28 +613,44 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
   // FloatVector nextLayerDelta, FloatVector curLayerOutput,
       DenseFloatMatrix weightUpdateMatrix) {
 
+    FloatMatrix weightMatrix = this.weightMatrixList.get(curLayerIdx);
+    FloatMatrix prevWeightMat = prevWeightUpdatesList.get(curLayerIdx);
+    
     // get layer related information
     int x = this.weightMatrixList.get(curLayerIdx).getColumnCount();
     int y = this.weightMatrixList.get(curLayerIdx).getRowCount();
 
-    FloatVector deltaVector = new DenseFloatVector(x);
-    Neuron<?>[] ns = neurons.get(curLayerIdx);
+    Neuron[] ns = neurons.get(curLayerIdx);
     
     for (int row = 0; row < x; ++row) {
-      Neuron<?> n = ns[row];
+      Neuron n = ns[row];
       n.setWeightVector(y);
 
       try {
-        Iterable msgs = new ErrorMessageIterable(curLayerIdx, row);
-        n.backward(msgs);
+        FloatVector weightVector = weightMatrix.getColumnVector(row);
+        n.setWeightVector(weightVector);
+        
+        Neuron[] nextLayer = neurons.get(curLayerIdx + 1);
+        FloatVector deltaVector = new DenseFloatVector(weightVector.getDimension()); 
+        
+        for(int i = 0; i < weightVector.getDimension(); ++i) {
+          if (curLayerIdx + 1 == finalLayerIdx) {
+            deltaVector.set(i, nextLayer[i].getDelta());
+          } else {
+            deltaVector.set(i, nextLayer[i + 1].getDelta());
+          }
+        }
+        n.setDeltaVector(deltaVector);
+        n.setPrevWeightVector(prevWeightMat.getColumnVector(row));
+        
+        n.backward(deltaVector);
       } catch (IOException e) {
         // TODO Auto-generated catch block
         e.printStackTrace();
       }
 
       // update weights
-      weightUpdateMatrix.setColumn(row, n.getWeights());
-      deltaVector.set(row, n.getDelta());
+      weightUpdateMatrix.setColumn(row, n.getUpdates());
     }
 
   }

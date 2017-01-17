@@ -21,12 +21,9 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.math.RandomUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -50,6 +47,7 @@ import org.apache.hama.util.ReflectionUtils;
 import org.apache.horn.core.Constants.LearningStyle;
 import org.apache.horn.core.Constants.TrainingMethod;
 import org.apache.horn.examples.MultiLayerPerceptron.StandardNeuron;
+import org.apache.horn.examples.RecurrentDropoutNeuron;
 import org.apache.horn.funcs.FunctionFactory;
 import org.apache.horn.funcs.IdentityFunction;
 import org.apache.horn.funcs.SoftMax;
@@ -83,14 +81,14 @@ public class RecurrentLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork 
   protected List<List<FloatMatrix>> prevWeightUpdatesLists;
   /* Different layers can have different squashing function */
   protected List<FloatFunction> squashingFunctionList;
-  protected List<Class<? extends Neuron<?>>> neuronClassList;
+  protected List<Class<? extends Neuron>> neuronClassList;
   /* Record the recurrent layer */
   protected List<Boolean> recurrentLayerList;
   /* Recurrent step size */
   protected int recurrentStepSize;
   protected int finalLayerIdx;
-  private List<Neuron<?>[]> neurons;
-  private List<List<Neuron<?>[]>> neuronLists;
+  private List<Neuron[]> neurons;
+  private List<List<Neuron[]>> neuronLists;
   private float dropRate;
   private long iterations;
 
@@ -128,7 +126,7 @@ public class RecurrentLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork 
   private void initializeNeurons(boolean isTraining) {
     this.neuronLists = Lists.newArrayListWithExpectedSize(recurrentStepSize);
     for (int stepIdx = 0; stepIdx < this.recurrentStepSize; stepIdx++) {
-      neurons = new ArrayList<Neuron<?>[]>();
+      neurons = new ArrayList<Neuron[]>();
       
       int expectedNeuronsSize = this.layerSizeList.size();
       if (stepIdx < this.recurrentStepSize - this.numOutCells) {
@@ -141,15 +139,15 @@ public class RecurrentLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork 
             &&  this.recurrentLayerList.get(neuronLayerIdx+1)) {
           numOfNeurons = numOfNeurons + layerSizeList.get(neuronLayerIdx+1) - 1;
         }
-        Class<? extends Neuron<?>> neuronClass;
+        Class<? extends Neuron> neuronClass;
         if (neuronLayerIdx == 0)
           neuronClass = StandardNeuron.class; // actually doesn't needed
         else
           neuronClass = neuronClassList.get(neuronLayerIdx - 1);
 
-        Neuron<?>[] tmp = new Neuron[numOfNeurons];
+        Neuron[] tmp = new Neuron[numOfNeurons];
         for (int neuronIdx = 0; neuronIdx < numOfNeurons; neuronIdx++) {
-          Neuron<?> n = newNeuronInstance(neuronClass);
+          Neuron n = newNeuronInstance(neuronClass);
           if (n instanceof RecurrentDropoutNeuron)
             ((RecurrentDropoutNeuron) n).setDropRate(dropRate);
           if (neuronLayerIdx > 0 && neuronIdx < layerSizeList.get(neuronLayerIdx))
@@ -225,19 +223,19 @@ public class RecurrentLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork 
    * {@inheritDoc}
    */
   public int addLayer(int size, boolean isFinalLayer,
-      FloatFunction squashingFunction, Class<? extends Neuron<?>> neuronClass) {
+      FloatFunction squashingFunction, Class<? extends Neuron> neuronClass) {
     return addLayer(size, isFinalLayer, squashingFunction, neuronClass, null, true);
   }
 
   public int addLayer(int size, boolean isFinalLayer,
-      FloatFunction squashingFunction, Class<? extends Neuron<?>> neuronClass, int numOutCells) {
+      FloatFunction squashingFunction, Class<? extends Neuron> neuronClass, int numOutCells) {
     if (isFinalLayer)
       this.numOutCells = (numOutCells == 0 ? this.recurrentStepSize:numOutCells);
     return addLayer(size, isFinalLayer, squashingFunction, neuronClass, null, false);
   }
 
   public int addLayer(int size, boolean isFinalLayer,
-      FloatFunction squashingFunction, Class<? extends Neuron<?>> neuronClass,
+      FloatFunction squashingFunction, Class<? extends Neuron> neuronClass,
       Class<? extends IntermediateOutput> interlayer, boolean isRecurrent) {
     Preconditions.checkArgument(size > 0,
         "Size of layer must be larger than 0.");
@@ -403,7 +401,7 @@ public class RecurrentLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork 
     this.neuronClassList = Lists.newArrayList();
     for (int i = 0; i < neuronClasses; ++i) {
       try {
-        Class<? extends Neuron<?>> clazz = (Class<? extends Neuron<?>>) Class
+        Class<? extends Neuron> clazz = (Class<? extends Neuron>) Class
             .forName(input.readUTF());
         neuronClassList.add(clazz);
       } catch (ClassNotFoundException e) {
@@ -468,7 +466,7 @@ public class RecurrentLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork 
 
     // write neuron classes
     output.writeInt(this.neuronClassList.size());
-    for (Class<? extends Neuron<?>> clazz : this.neuronClassList) {
+    for (Class<? extends Neuron> clazz : this.neuronClassList) {
       output.writeUTF(clazz.getName());
     }
 
@@ -548,7 +546,7 @@ public class RecurrentLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork 
    */
   public FloatVector getOutputInternal(FloatVector instanceWithBias) {
     // sets the output of input layer
-    Neuron<?>[] inputLayer;
+    Neuron[] inputLayer;
     for (int stepIdx = 0; stepIdx < this.weightMatrixLists.size(); stepIdx++) {
       inputLayer = neuronLists.get(stepIdx).get(0);
       for (int inputNeuronIdx = 0; inputNeuronIdx < this.layerSizeList.get(0); inputNeuronIdx++) {
@@ -599,7 +597,7 @@ public class RecurrentLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork 
     private int prevNeuronID;
     private int end;
     private FloatMatrix weightMat;
-    private Neuron<?>[] layer;
+    private Neuron[] layer;
 
     public InputMessageIterable(int fromLayer, int row) {
       this.currNeuronID = row;
@@ -658,18 +656,25 @@ public class RecurrentLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork 
     FloatFunction squashingFunction = getSquashingFunction(fromLayerIdx);
     FloatVector vec = new DenseFloatVector(weightMatrix.getRowCount());
 
+    FloatVector inputVector = new DenseFloatVector(neurons.get(fromLayerIdx).length);
+    for(int i = 0; i < neurons.get(fromLayerIdx).length; i++) {
+      inputVector.set(i, neurons.get(fromLayerIdx)[i].getOutput());
+    }
+    
     for (int row = 0; row < weightMatrix.getRowCount(); row++) {
-      Neuron<?> n;
+      Neuron n;
       if (curLayerIdx == finalLayerIdx)
         n = neurons.get(curLayerIdx)[row];
       else
         n = neurons.get(curLayerIdx)[row + 1];
 
       try {
-        Iterable msgs = new InputMessageIterable(fromLayerIdx, row);
+        FloatVector weightVector = weightMatrix.getRowVector(row);
+        n.setWeightVector(weightVector);
+
         ((RecurrentDropoutNeuron) n).setRecurrentDelta(0);
         n.setIterationNumber(iterations);
-        n.forward(msgs);
+        n.forward(inputVector);
       } catch (IOException e) {
         // TODO Auto-generated catch block
         e.printStackTrace();
@@ -815,7 +820,7 @@ public class RecurrentLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork 
       FloatMatrix lastWeightMatrix = this.weightMatrixLists.get(step)
           .get(this.weightMatrixLists.get(step).size() - 1);
       int neuronIdx = 0;
-      for (Neuron<?> aNeurons : this.neuronLists.get(step).get(this.finalLayerIdx)) {
+      for (Neuron aNeurons : this.neuronLists.get(step).get(this.finalLayerIdx)) {
         float finalOut = aNeurons.getOutput();
         float costFuncDerivative = this.costFunction.applyDerivative(
             labels.get(labelIdx), finalOut);
@@ -873,7 +878,7 @@ public class RecurrentLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork 
       this.end = weightMat.getRowCount() - 1;
       this.prevWeightMat = prevWeightUpdatesLists.get(recurrentStepIdx).get(curLayerIdx);
       
-      Neuron<?>[] nextLayer = neuronLists.get(recurrentStepIdx).get(curLayerIdx + 1);
+      Neuron[] nextLayer = neuronLists.get(recurrentStepIdx).get(curLayerIdx + 1);
       nextLayerDelta = new float[weightMat.getRowCount()];
       
       for(int i = 0; i <= end; ++i) {
@@ -935,23 +940,41 @@ public class RecurrentLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork 
   private void backpropagate(int recurrentStepIdx, int curLayerIdx,
       DenseFloatMatrix weightUpdateMatrix) {
 
+    FloatMatrix weightMat = weightMatrixLists.get(recurrentStepIdx).get(curLayerIdx);
+    FloatMatrix prevWeightMat = prevWeightUpdatesLists.get(recurrentStepIdx).get(curLayerIdx);
+    
     // get layer related information
     int x = this.weightMatrixList.get(curLayerIdx).getColumnCount();
     int y = this.weightMatrixList.get(curLayerIdx).getRowCount();
 
-    FloatVector deltaVector = new DenseFloatVector(x);
-    Neuron<?>[] ns = this.neuronLists.get(recurrentStepIdx).get(curLayerIdx);
+    Neuron[] ns = this.neuronLists.get(recurrentStepIdx).get(curLayerIdx);
 
     for (int row = 0; row < x; ++row) {
-      Neuron<?> n = ns[row];
+      Neuron n = ns[row];
       n.setWeightVector(y);
 
       try {
-        Iterable msgs = new ErrorMessageIterable(recurrentStepIdx, curLayerIdx, row);
-        n.backward(msgs);
+        FloatVector weightVector = weightMat.getColumnVector(row);
+        n.setWeightVector(weightVector);
+        
+        Neuron[] nextLayer = neuronLists.get(recurrentStepIdx).get(curLayerIdx + 1);
+        FloatVector deltaVector = new DenseFloatVector(weightVector.getDimension()); 
+        
+        for(int i = 0; i < weightVector.getDimension(); ++i) {
+          if (curLayerIdx + 1 == finalLayerIdx) {
+            deltaVector.set(i, nextLayer[i].getDelta());
+          } else {
+            deltaVector.set(i, nextLayer[i + 1].getDelta());
+          }
+        }
+        n.setDeltaVector(deltaVector);
+        n.setPrevWeightVector(prevWeightMat.getColumnVector(row));
+        
+        n.backward(deltaVector);
+        
         if (row >= layerSizeList.get(curLayerIdx) && recurrentStepIdx > 0
             && recurrentLayerList.get(curLayerIdx+1)) {
-          Neuron<?> recurrentNeuron = neuronLists.get(recurrentStepIdx-1).get(curLayerIdx+1)
+          Neuron recurrentNeuron = neuronLists.get(recurrentStepIdx-1).get(curLayerIdx+1)
               [row-layerSizeList.get(curLayerIdx)+1];
           recurrentNeuron.backpropagate(n.getDelta());
         }
@@ -959,8 +982,7 @@ public class RecurrentLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork 
         e.printStackTrace();
       }
       // update weights
-      weightUpdateMatrix.setColumn(row, n.getWeights());
-      deltaVector.set(row, n.getDelta());
+      weightUpdateMatrix.setColumn(row, n.getUpdates());
     }
   }
 

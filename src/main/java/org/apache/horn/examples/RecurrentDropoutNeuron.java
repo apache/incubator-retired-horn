@@ -15,22 +15,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.horn.core;
+package org.apache.horn.examples;
 
 import java.io.IOException;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.io.FloatWritable;
+import org.apache.hama.commons.math.FloatVector;
+import org.apache.horn.core.Neuron;
 import org.apache.horn.utils.MathUtils;
 
-public class RecurrentDropoutNeuron extends
-    Neuron<Synapse<FloatWritable, FloatWritable>> {
+public class RecurrentDropoutNeuron extends Neuron {
 
   private float m2;
   private float recurrentDelta = 0;
   private double dropRate = 0;
-  
+
   public double getDropRate() {
     return dropRate;
   }
@@ -40,45 +38,33 @@ public class RecurrentDropoutNeuron extends
   }
 
   @Override
-  public void forward(Iterable<Synapse<FloatWritable, FloatWritable>> messages)
-      throws IOException {
-    m2 = (isTraining()) ? MathUtils.getBinomial(1, dropRate) :1.0f;
+  public void forward(FloatVector inputVector) throws IOException {
+    m2 = (isTraining()) ? MathUtils.getBinomial(1, dropRate) : 1.0f;
 
     if (m2 > 0) {
-      float sum = 0;
-      for (Synapse<FloatWritable, FloatWritable> m : messages) {
-        sum += m.getInput() * m.getWeight();
-      }
-
-      this.setDrop(false);
-      this.feedforward(squashingFunction.apply(sum) * m2);
+      float sum = inputVector.multiply(getWeightVector()).sum();
+      setDrop(false);
+      feedforward(squashingFunction.apply(sum) * m2);
     } else {
-      this.setDrop(true);
-      this.feedforward(0);
+      setDrop(true);
+      feedforward(0);
     }
   }
 
-  private static final Log LOG = LogFactory.getLog(RecurrentDropoutNeuron.class);
-  
   @Override
-  public void backward(Iterable<Synapse<FloatWritable, FloatWritable>> messages)
-      throws IOException {
+  public void backward(FloatVector deltaVector) throws IOException {
     if (!this.isDropped()) {
-      float delta = 0;
+      float delta = getWeightVector().multiply(deltaVector).sum();
 
-      for (Synapse<FloatWritable, FloatWritable> m : messages) {
-        // Calculates error gradient for each neuron
-        delta += (m.getDelta() * m.getWeight());
+      // update weights
+      pushUpdates(deltaVector.multiply(-getLearningRate() * getOutput()).add(
+          getPrevWeightVector().multiply(getMomentumWeight())));
 
-        // Weight corrections
-        float weight = -this.getLearningRate() * m.getDelta()
-            * this.getOutput() + this.getMomentumWeight() * m.getPrevWeight();
-        this.push(weight);
-      }
       // TODO set squashingFunction of recurrent neurons identity
-      this.backpropagate(recurrentDelta + delta * squashingFunction.applyDerivative(getOutput()));
+      backpropagate(recurrentDelta + delta
+          * squashingFunction.applyDerivative(getOutput()));
     } else {
-      this.backpropagate(0);
+      backpropagate(0);
     }
   }
 

@@ -19,61 +19,45 @@ package org.apache.horn.examples;
 
 import java.io.IOException;
 
-import org.apache.hadoop.io.FloatWritable;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.commons.math.FloatVector;
 import org.apache.horn.core.Constants.TrainingMethod;
-import org.apache.horn.core.DropoutNeuron;
 import org.apache.horn.core.HornJob;
 import org.apache.horn.core.LayeredNeuralNetwork;
 import org.apache.horn.core.Neuron;
-import org.apache.horn.core.Synapse;
 import org.apache.horn.funcs.CrossEntropy;
 import org.apache.horn.funcs.ReLU;
 import org.apache.horn.funcs.SoftMax;
 
 public class MultiLayerPerceptron {
 
-  public static class StandardNeuron extends
-      Neuron<Synapse<FloatWritable, FloatWritable>> {
+  public static class StandardNeuron extends Neuron {
 
     @Override
-    public void forward(Iterable<Synapse<FloatWritable, FloatWritable>> messages)
-        throws IOException {
-      float sum = 0;
-      for (Synapse<FloatWritable, FloatWritable> m : messages) {
-        sum += m.getInput() * m.getWeight();
-      }
-      this.feedforward(squashingFunction.apply(sum));
+    public void forward(FloatVector input) throws IOException {
+      float sum = input.multiply(getWeightVector()).sum();
+      feedforward(squashingFunction.apply(sum));
     }
 
     @Override
-    public void backward(
-        Iterable<Synapse<FloatWritable, FloatWritable>> messages)
-        throws IOException {
-      float delta = 0;
-
-      if (!this.isDropped()) {
-        for (Synapse<FloatWritable, FloatWritable> m : messages) {
-          // Calculates error gradient for each neuron
-          delta += (m.getDelta() * m.getWeight());
-
-          // Weight corrections
-          float weight = -this.getLearningRate() * m.getDelta()
-              * this.getOutput() + this.getMomentumWeight() * m.getPrevWeight();
-          this.push(weight);
-        }
-      }
-
-      this.backpropagate(delta * squashingFunction.applyDerivative(getOutput()));
+    public void backward(FloatVector deltaVector) throws IOException {
+      float delta = getWeightVector().multiply(deltaVector).sum();
+      
+      // weight corrections
+      pushUpdates(deltaVector.multiply(-getLearningRate() * getOutput())
+          .add(getPrevWeightVector().multiply(getMomentumWeight())));
+      backpropagate(delta * squashingFunction.applyDerivative(getOutput()));
     }
   }
 
   public static HornJob createJob(HamaConfiguration conf, String modelPath,
       String inputPath, float learningRate, float momemtumWeight,
       float regularizationWeight, int features, int hu, int labels,
-      int miniBatch, int maxIteration) throws IOException, InstantiationException, IllegalAccessException {
+      int miniBatch, int maxIteration) throws IOException,
+      InstantiationException, IllegalAccessException {
 
-    HornJob job = new HornJob(conf, LayeredNeuralNetwork.class, MultiLayerPerceptron.class);
+    HornJob job = new HornJob(conf, LayeredNeuralNetwork.class,
+        MultiLayerPerceptron.class);
     job.setTrainingSetPath(inputPath);
     job.setModelPath(modelPath);
 
@@ -97,7 +81,8 @@ public class MultiLayerPerceptron {
   }
 
   public static void main(String[] args) throws IOException,
-      InterruptedException, ClassNotFoundException, NumberFormatException, InstantiationException, IllegalAccessException {
+      InterruptedException, ClassNotFoundException, NumberFormatException,
+      InstantiationException, IllegalAccessException {
     if (args.length < 9) {
       System.out.println("Usage: <MODEL_PATH> <INPUT_PATH> "
           + "<LEARNING_RATE> <MOMEMTUM_WEIGHT> <REGULARIZATION_WEIGHT> "

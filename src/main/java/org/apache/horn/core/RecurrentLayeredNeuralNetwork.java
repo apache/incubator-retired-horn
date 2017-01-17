@@ -46,8 +46,8 @@ import org.apache.hama.commons.math.FloatVector;
 import org.apache.hama.util.ReflectionUtils;
 import org.apache.horn.core.Constants.LearningStyle;
 import org.apache.horn.core.Constants.TrainingMethod;
-import org.apache.horn.examples.RecurrentDropoutNeuron;
 import org.apache.horn.examples.MultiLayerPerceptron.StandardNeuron;
+import org.apache.horn.examples.RecurrentDropoutNeuron;
 import org.apache.horn.funcs.FunctionFactory;
 import org.apache.horn.funcs.IdentityFunction;
 import org.apache.horn.funcs.SoftMax;
@@ -656,6 +656,11 @@ public class RecurrentLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork 
     FloatFunction squashingFunction = getSquashingFunction(fromLayerIdx);
     FloatVector vec = new DenseFloatVector(weightMatrix.getRowCount());
 
+    FloatVector inputVector = new DenseFloatVector(neurons.get(fromLayerIdx).length);
+    for(int i = 0; i < neurons.get(fromLayerIdx).length; i++) {
+      inputVector.set(i, neurons.get(fromLayerIdx)[i].getOutput());
+    }
+    
     for (int row = 0; row < weightMatrix.getRowCount(); row++) {
       Neuron n;
       if (curLayerIdx == finalLayerIdx)
@@ -666,10 +671,7 @@ public class RecurrentLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork 
       try {
         FloatVector weightVector = weightMatrix.getRowVector(row);
         n.setWeightVector(weightVector);
-        FloatVector inputVector = new DenseFloatVector(weightVector.getDimension());
-        for(int i = 0; i < weightVector.getDimension(); i++) {
-          inputVector.set(i, neurons.get(fromLayerIdx)[i].getOutput());
-        }
+
         ((RecurrentDropoutNeuron) n).setRecurrentDelta(0);
         n.setIterationNumber(iterations);
         n.forward(inputVector);

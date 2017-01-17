@@ -416,7 +416,6 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
    * @param neuronClass
    * @return a new neuron instance
    */
-  @SuppressWarnings({ "rawtypes" })
   public static Neuron newNeuronInstance(Class<? extends Neuron> neuronClass) {
     return (Neuron) ReflectionUtils.newInstance(neuronClass);
   }
@@ -433,6 +432,10 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
     FloatFunction squashingFunction = getSquashingFunction(fromLayer);
     FloatVector vec = new DenseFloatVector(weightMatrix.getRowCount());
 
+    FloatVector inputVector = new DenseFloatVector(neurons.get(fromLayer).length);
+    for(int i = 0; i < neurons.get(fromLayer).length; i++) {
+      inputVector.set(i, neurons.get(fromLayer)[i].getOutput());
+    }
     
     for (int row = 0; row < weightMatrix.getRowCount(); row++) {
       Neuron n;
@@ -444,10 +447,6 @@ public class LayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
       try {
         FloatVector weightVector = weightMatrix.getRowVector(row);
         n.setWeightVector(weightVector);
-        FloatVector inputVector = new DenseFloatVector(weightVector.getDimension());
-        for(int i = 0; i < weightVector.getDimension(); i++) {
-          inputVector.set(i, neurons.get(fromLayer)[i].getOutput());
-        }
 
         n.setIterationNumber(iterations);
         n.forward(inputVector);

@@ -21,14 +21,14 @@ public class MNISTTest extends TestCase {
   }
 
   private void neuralNetworkTraining() {
-    String strTrainingDataPath = "/tmp/mnist.seq";
+    String strTrainingDataPath = "/home/edward/mnist.seq";
     int featureDimension = 784;
     int labelDimension = 10;
 
     try {
       HornJob ann = MultiLayerPerceptron.createJob(new HamaConfiguration(),
           "/tmp/model", strTrainingDataPath, 0.2f, 0.98f, 0.01f,
-          featureDimension, 100, labelDimension, 10, 1200);
+          featureDimension, 500, labelDimension, 10, 120);
 
       long startTime = System.currentTimeMillis();
       if (ann.waitForCompletion(true)) {
